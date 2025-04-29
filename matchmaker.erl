@@ -1,13 +1,13 @@
--module(match_maker).
--export([find_match/1, start/0]).
+-module(matchmaker).
+-export([find/1, start/0]).
 
 start() ->
     Map = #{},
-    Pid = spawn(fun() -> match_maker(Map) end),
+    Pid = spawn(fun() -> matchmaker(Map) end),
     register(?MODULE, Pid).
 
-find_match(Level) ->
-    ?MODULE ! {self(), find_match, Level},
+find(Level) ->
+    ?MODULE ! {self(), find, Level},
     % receive match pid
     receive Msg -> Msg end.
 
@@ -28,23 +28,23 @@ find_lvl(M, L) ->
                             L-1;
                         error ->
                             not_found
-                        end
-                end          
+                    end
+            end          
     end.
-match_maker(Map) ->
+
+matchmaker(Map) ->
     receive 
-        {Pid, find_match, L} -> 
+        {Player1, find, L} -> 
             case find_lvl(Map, L) of
                 not_found ->
                     erlang:display("Player not found, getting into queue"),
-                    New_Map = maps:put(L, Pid, Map),
-                    match_maker(New_Map);
+                    matchmaker(maps:put(L, Player1, Map));
                 Level ->
                     erlang:display("Found match"),
-                    P  = maps:find(Level, Map),
-                    New_Map = maps:remove(Level, Map),
-                    P ! found_match,
-                    Pid ! found_match,
-                    match_maker(New_Map)
-                    end
-            end.
+                    {ok, Player2}  = maps:find(Level, Map),
+                    Match = match:create([Player1, Player2]),
+                    Player1 ! {found, Match},
+                    Player2 ! {found, Match},
+                    matchmaker(maps:remove(Level, Map))
+            end
+    end.

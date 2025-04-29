@@ -10,6 +10,7 @@ stop() -> server ! stop.
 
 server(Port) ->
     auth:start(),
+    matchmaker:start(),
     {ok, LSock} = gen_tcp:listen(Port, [{packet, line}, {reuseaddr, true}]),
     spawn(fun() -> acceptor(LSock) end),
     receive stop -> ok end.
@@ -37,6 +38,7 @@ user_logged_out(Sock) ->
                         invalid ->
                             gen_tcp:send(Sock, "wrong username or password\n")
                     end;
+                ["/save"] -> auth:save();
                 _ -> gen_tcp:send(Sock, "invalid message\n")
             end;
         {tcp_closed, _} ->
@@ -70,11 +72,10 @@ user_logged_in(Sock, User) ->
                         ok -> gen_tcp:send(Sock, "user password changed\n");
                         invalid -> gen_tcp:send(Sock, "user not logged\n")
                     end;
+                ["/s"] ->
+                    matchmaker:find(5),
+                    user_in_match(Sock, User);
                 _ -> gen_tcp:send(Sock, "invalid message\n")
-                % ["/s"] ->
-                %     case match:search(User) of
-                %         ok -> ok
-                %     end
             end;
         {tcp_closed, _} ->
             io:format("socket closed.~n");
@@ -82,3 +83,27 @@ user_logged_in(Sock, User) ->
             io:format("error.~n")
     end,
     user_logged_in(Sock, User).
+
+user_in_lobby(Sock, User) -> 
+    receive 
+        {tcp, _, Data} -> 
+            case string:tokens(Data, " \n") of
+                ["/s"] ->
+                    matchmaker:find(5),
+                    user_in_match(Sock, User)
+            end;
+        {tcp_closed, _} ->
+            io:format("socket closed.~n");
+        {tcp_error, _} ->
+            io:format("error.~n")
+    end,
+    user_in_lobby(Sock, User).
+
+user_in_match(Sock, User) ->
+    receive
+        {pos, X, Y} ->
+            gen_tcp:send(Sock, io_lib:format("x:~p y:~p\n", [X, Y]));
+        {finished, Result} ->
+            gen_tcp:send(Sock, io_lib:format("match finished: ~p\n", [Result])),
+            user_in_lobby(Sock, User)
+    end.
