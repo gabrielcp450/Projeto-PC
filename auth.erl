@@ -1,4 +1,4 @@
--module(auth_manager).
+-module(auth).
 -export([create_account/2, close_account/1, login/2, logout/1, change_pass/2, start/0, online/0]).
 
 
@@ -22,7 +22,7 @@ logout(User) ->
     receive Msg -> Msg end.
 
 change_pass(User, New_Pass) ->
-    ?MODULE ! {self(), new_pass, User,New_Pass},
+    ?MODULE ! {self(), change_pass, User,New_Pass},
     receive Msg -> Msg end.
 
 online() ->
@@ -112,7 +112,8 @@ loop(Map) ->
                     erlang:display("Dosen't exist"),
                     Pid ! invalid,
                     loop(Map)
-            end;
+            end,
+            Pid ! invalid;
         {Pid, online} -> 
                 NewMap = maps:filtermap(is_online, map),
                 Pid ! maps:keys(NewMap),
