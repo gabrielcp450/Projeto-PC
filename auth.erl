@@ -1,5 +1,5 @@
 -module(auth).
--export([create_account/2, close_account/1, login/2, logout/1, change_pass/2, start/0, online/0]).
+-export([create_account/2, close_account/1, login/2, logout/1, change_pass/2, start/0, save/0, stop/0, online/0]).
 
 
 
@@ -32,10 +32,20 @@ online() ->
 
 
 start() ->
-    Map = #{},
+    case file:read_file("map_file.bin") of 
+        {ok, Bin} -> 
+            Map = binary_to_term(Bin);
+        {error, _ } ->
+            Map = #{}
+    end,
     Pid = spawn(fun() -> loop(Map) end),
     register(?MODULE, Pid).
 
+stop() ->
+    ?MODULE ! stop.
+
+save() ->
+    ?MODULE ! save.
 
 loop(Map) -> 
     receive 
@@ -118,7 +128,16 @@ loop(Map) ->
                 NewMap = maps:filtermap(is_online, map),
                 Pid ! maps:keys(NewMap),
                 % Pid ! [U || {U , {_, true}} <- to_list(map)]
-                loop(Map)
+                loop(Map);
+        save ->
+            Bin = term_to_binary(Map),
+            file:write_file("map_file.bin", Bin),
+            loop(Map);
+
+
+        stop ->
+            Bin = term_to_binary(Map),
+            file:write_file("map_file.bin", Bin)
 
     end.
 
