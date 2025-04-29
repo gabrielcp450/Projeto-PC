@@ -75,11 +75,15 @@ loop(Map) ->
             end;
         {Pid, login, U, P} -> 
             case maps:find(U, Map) of 
-                {ok, {P, _} } -> 
+                {ok, {P, false} } -> 
                     erlang:display("ok"),
                     Pid ! ok,
                     NewMap = maps:update(U,{P, true}, Map),
                     loop(NewMap);
+                {ok, {P, true}} -> 
+                    erlang:display("User's already login"),
+                    Pid ! invalid,
+                    loop(Map);
                 {ok, _} -> 
                     erlang:display("Invalid password"),
                     Pid ! invalid,
