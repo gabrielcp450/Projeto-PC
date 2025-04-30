@@ -35,6 +35,8 @@ user_logged_out(Sock) ->
                         ok ->
                             gen_tcp:send(Sock, "user logged in\n"),
                             user_logged_in(Sock, User);
+                        already_logged ->
+                            gen_tcp:send(Sock, "user already logged in\n");
                         invalid ->
                             gen_tcp:send(Sock, "wrong username or password\n")
                     end;
@@ -78,32 +80,22 @@ user_logged_in(Sock, User) ->
                 _ -> gen_tcp:send(Sock, "invalid message\n")
             end;
         {tcp_closed, _} ->
-            io:format("socket closed.~n");
+            io:format("socket closed.~n"),
+            user_logged_out(Sock);
         {tcp_error, _} ->
-            io:format("error.~n")
+            io:format("error.~n"),
+            user_logged_out(Sock)
     end,
     user_logged_in(Sock, User).
 
-user_in_lobby(Sock, User) -> 
-    receive 
-        {tcp, _, Data} -> 
-            case string:tokens(Data, " \n") of
-                ["/s"] ->
-                    matchmaker:find(5),
-                    user_in_match(Sock, User)
-            end;
-        {tcp_closed, _} ->
-            io:format("socket closed.~n");
-        {tcp_error, _} ->
-            io:format("error.~n")
-    end,
-    user_in_lobby(Sock, User).
 
 user_in_match(Sock, User) ->
     receive
         {pos, X, Y} ->
+            io:format("STREAMING: x:~p y:~p~n", [X, Y]),
             gen_tcp:send(Sock, io_lib:format("x:~p y:~p\n", [X, Y]));
         {finished, Result} ->
+            gen_tcp:send(Sock, "END\n"),
             gen_tcp:send(Sock, io_lib:format("match finished: ~p\n", [Result])),
-            user_in_lobby(Sock, User)
+            user_logged_in(Sock, User)
     end.

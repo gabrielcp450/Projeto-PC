@@ -82,7 +82,7 @@ loop(Map) ->
                     loop(NewMap);
                 {ok, {P, true}} -> 
                     erlang:display("User's already login"),
-                    Pid ! invalid,
+                    Pid ! already_logged,
                     loop(Map);
                 {ok, _} -> 
                     erlang:display("Invalid password"),
