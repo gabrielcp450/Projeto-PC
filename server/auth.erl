@@ -5,7 +5,14 @@
 
 create_account(User ,Pass ) ->
     ?MODULE ! {self(), create_account, User, Pass},
-    receive Msg -> Msg end.
+    receive
+        ok ->
+            status:insert(User),
+            ok;
+        user_exists ->
+            user_exists
+
+    end.
 
 
 close_account(User) ->
@@ -32,7 +39,7 @@ online() ->
 
 
 start() ->
-    case file:read_file("map_file.bin") of 
+    case file:read_file("storage/auth.bin") of 
         {ok, Bin} -> 
             Map = binary_to_term(Bin);
         {error, _ } ->
@@ -135,13 +142,13 @@ loop(Map) ->
                 loop(Map);
         save ->
             Bin = term_to_binary(Map),
-            file:write_file("map_file.bin", Bin),
+            file:write_file("storage/auth.bin", Bin),
             loop(Map);
 
 
         stop ->
             Bin = term_to_binary(Map),
-            file:write_file("map_file.bin", Bin)
+            file:write_file("storage/auth.bin", Bin)
 
     end.
 

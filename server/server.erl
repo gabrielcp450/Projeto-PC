@@ -11,6 +11,7 @@ stop() -> server ! stop.
 server(Port) ->
     auth:start(),
     matchmaker:start(),
+    status:start(),
     {ok, LSock} = gen_tcp:listen(Port, [{packet, line}, {reuseaddr, true}]),
     spawn(fun() -> acceptor(LSock) end),
     receive stop -> ok end.
@@ -40,7 +41,9 @@ user_logged_out(Sock) ->
                         invalid ->
                             gen_tcp:send(Sock, "wrong username or password\n")
                     end;
-                ["/save"] -> auth:save();
+                ["/save"] -> 
+                    auth:save(),
+                    status:save();
                 _ -> gen_tcp:send(Sock, "invalid message\n")
             end;
         {tcp_closed, _} ->
@@ -75,8 +78,14 @@ user_logged_in(Sock, User) ->
                         invalid -> gen_tcp:send(Sock, "user not logged\n")
                     end;
                 ["/s"] ->
-                    matchmaker:find(5),
+                    matchmaker:find(User),
                     user_in_match(Sock, User);
+                ["/t"] ->
+                    Top10 = status:top10(),
+                    io:format("Top10: ~p~n", [Top10]),
+                    Str = io_lib:format("Top10: ~p~n", [Top10]),
+                    gen_tcp:send(Sock, lists:flatten(Str)),
+                    user_logged_in(Sock, User);
                 _ -> gen_tcp:send(Sock, "invalid message\n")
             end;
         {tcp_closed, _} ->

@@ -6,7 +6,8 @@ start() ->
     Pid = spawn(fun() -> matchmaker(Map) end),
     register(?MODULE, Pid).
 
-find(Level) ->
+find(User) ->
+    Level = status:get_level(User),
     ?MODULE ! {self(), find, Level},
     % receive match pid
     receive Msg -> Msg end.
