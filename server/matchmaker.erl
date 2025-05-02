@@ -8,7 +8,7 @@ start() ->
 
 find(User) ->
     Level = stats:get_level(User),
-    ?MODULE ! {self(), find, Level}.
+    ?MODULE ! {self(), find, Level, User}.
 
 find_lvl(M, L) ->
     case maps:find(L, M) of
@@ -33,17 +33,17 @@ find_lvl(M, L) ->
 
 matchmaker(Map) ->
     receive 
-        {Player1, find, L} -> 
+        {Pid1, find, L, User1} -> 
             case find_lvl(Map, L) of
                 not_found ->
-                    erlang:display("Player not found, getting into queue"),
-                    matchmaker(maps:put(L, Player1, Map));
+                    erlang:display("Opponent not found, getting into queue"),
+                    matchmaker(maps:put(L, {Pid1, User1}, Map));
                 Level ->
                     erlang:display("Found match"),
-                    {ok, Player2}  = maps:find(Level, Map),
-                    Match = match:create([Player1, Player2]),
-                    Player1 ! {match_found, Match},
-                    Player2 ! {match_found, Match},
+                    {ok, {Pid2, User2}}  = maps:find(Level, Map),
+                    Match = match:create([Pid1, Pid2]),
+                    Pid1 ! {match_found, Match, User2},
+                    Pid2 ! {match_found, Match, User1},
                     matchmaker(maps:remove(Level, Map))
             end
     end.

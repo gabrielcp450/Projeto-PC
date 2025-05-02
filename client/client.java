@@ -26,6 +26,9 @@ class client {
         for (int i = 0; i < 3; i++) {
             out.println("/s");
 
+            response = in.readLine();
+            System.out.println("Received: " + response);
+
             while (true) {
                 response = in.readLine();
                 if (response.equals("END")) {

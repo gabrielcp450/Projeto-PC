@@ -53,7 +53,7 @@ aux({U1, L1, W1, Lo1}, {U2, L2, W2, Lo2}) ->
     if 
         L1 > L2 ->
             true;
-        L2 < L1 ->
+        L1 < L2 ->
             false;
         W1 > W2 ->
             true;

@@ -87,8 +87,9 @@ user_logged_in(Sock, User) ->
                     user_logged_in(Sock, User);
                 _ -> gen_tcp:send(Sock, "invalid message\n")
             end;
-        {match_found, _} -> 
-            io:format("found match~n"),
+        {match_found, _, Opponent} -> 
+            Str = io_lib:format("match found: ~p vs ~p~n", [User, Opponent]),
+            gen_tcp:send(Sock, lists:flatten(Str)),
             user_in_match(Sock, User);
         {tcp_closed, _} ->
             io:format("socket closed when logged in.~n"),
