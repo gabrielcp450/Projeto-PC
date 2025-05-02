@@ -23,19 +23,25 @@ class client {
         response = in.readLine();
         System.out.println("Received: " + response);
 
-        out.println("/s");
+        for (int i = 0; i < 3; i++) {
+            out.println("/s");
 
-        while (true) {
-            response = in.readLine();
-            if (response.equals("END")) {
-                break;
+            while (true) {
+                response = in.readLine();
+                if (response.equals("END")) {
+                    break;
+                }
+                System.out.println("STREAM: " + response);
             }
-            System.out.println("STREAM: " + response);
-        }
-        System.out.println("STREAM Ended");
+            System.out.println("STREAM Ended");
 
-        response = in.readLine();
-        System.out.println("Received: " + response);
+            response = in.readLine();
+            System.out.println("Received: " + response);
+
+            out.println("/t");
+            response = in.readLine();
+            System.out.println("Received: " + response);
+        }
 
         sock.shutdownOutput();
         response = in.readLine();

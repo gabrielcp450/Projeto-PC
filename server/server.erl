@@ -11,7 +11,7 @@ stop() -> server ! stop.
 server(Port) ->
     auth:start(),
     matchmaker:start(),
-    status:start(),
+    stats:start(),
     {ok, LSock} = gen_tcp:listen(Port, [{packet, line}, {reuseaddr, true}]),
     spawn(fun() -> acceptor(LSock) end),
     receive stop -> ok end.
@@ -43,7 +43,7 @@ user_logged_out(Sock) ->
                     end;
                 ["/save"] -> 
                     auth:save(),
-                    status:save();
+                    stats:save();
                 _ -> gen_tcp:send(Sock, "invalid message\n")
             end;
         {tcp_closed, _} ->
@@ -80,7 +80,7 @@ user_logged_in(Sock, User) ->
                 ["/s"] ->
                     matchmaker:find(User);
                 ["/t"] ->
-                    Top10 = status:top10(),
+                    Top10 = stats:top10(),
                     io:format("Top10: ~p~n", [Top10]),
                     Str = io_lib:format("Top10: ~p~n", [Top10]),
                     gen_tcp:send(Sock, lists:flatten(Str)),
@@ -111,6 +111,10 @@ user_in_match(Sock, User) ->
         {finished, Result} ->
             gen_tcp:send(Sock, "END\n"),
             gen_tcp:send(Sock, io_lib:format("match finished: ~p\n", [Result])),
+            case Result of
+                win -> stats:add_win(User);
+                loss -> stats:add_loss(User)
+            end,
             user_logged_in(Sock, User);
         {tcp_closed, _} ->
             io:format("socket closed when in match.~n"),

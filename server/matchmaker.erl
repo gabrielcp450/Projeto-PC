@@ -7,7 +7,7 @@ start() ->
     register(?MODULE, Pid).
 
 find(User) ->
-    Level = status:get_level(User),
+    Level = stats:get_level(User),
     ?MODULE ! {self(), find, Level}.
 
 find_lvl(M, L) ->

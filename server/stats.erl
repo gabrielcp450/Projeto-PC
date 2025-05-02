@@ -1,17 +1,17 @@
--module(status).
+-module(stats).
 
 -export([start/0, insert/1, get_level/1, add_win/1, add_loss/1, top10/0, save/0, stop/0]).
 
 -record(data, {level = 1, win = 0, loss = 0, win_streak = 0, lose_streak = 0}).
 
 start() ->
-    case file:read_file("storage/status.bin") of 
+    case file:read_file("storage/stats.bin") of 
         {ok, Bin} -> 
             Map = binary_to_term(Bin);
         {error, _ } ->
             Map = #{}
     end,
-    Pid = spawn(fun() -> status(Map) end),
+    Pid = spawn(fun() -> stats(Map) end),
     register(?MODULE, Pid).
 
 insert(User) ->
@@ -68,16 +68,16 @@ aux({U1, L1, W1, Lo1}, {U2, L2, W2, Lo2}) ->
     end.
 
 
-status(Map) ->
+stats(Map) ->
     receive
         {Pid, insert, User} ->
             NewMap = maps:put(User, #data{}, Map),
             Pid ! ok,
-            status(NewMap);
+            stats(NewMap);
         {Pid, level, User} ->
             Data = maps:get(User, Map),
             Pid ! Data#data.level,
-            status(Map);
+            stats(Map);
         {Pid, win, User} ->
             Data = maps:get(User, Map),
             Level = Data#data.level,    
@@ -88,10 +88,10 @@ status(Map) ->
                     NewMap = maps:update(User, Data#data{level = Level + 1, win = Win + 1, win_streak = 0, lose_streak = 0}, Map),
                     Pid ! level_up;
                 true ->
-                    NewMap = maps:update(User, Data#data{win = Win + 1, win_streak = WinS + 1, lose_streak = 0}),
+                    NewMap = maps:update(User, Data#data{win = Win + 1, win_streak = WinS + 1, lose_streak = 0}, Map),
                     Pid ! ok
             end,
-            status(NewMap);
+            stats(NewMap);
         {Pid, loss, User} ->
             Data = maps:get(User, Map),
             Level = Data#data.level,    
@@ -99,7 +99,7 @@ status(Map) ->
             LossS = Data#data.lose_streak,
             if 
                 Level == 1 ->
-                    NewMap = maps:update(User, Data#data{loss = Loss + 1,lose_streak = LossS + 1, win_streak = 0}),
+                    NewMap = maps:update(User, Data#data{loss = Loss + 1, lose_streak = LossS + 1, win_streak = 0}, Map),
                     Pid ! ok;
                 (Level + 1) div 2 == LossS + 1 ->
                     NewMap = maps:update(User, Data#data{level = Level - 1, loss = Loss + 1, lose_streak = 0, win_streak = 0}, Map),
@@ -108,20 +108,20 @@ status(Map) ->
                     NewMap = maps:update(User, Data#data{loss = Loss + 1, lose_streak = LossS + 1, win_streak = 0}, Map),
                     Pid ! ok
             end,
-            status(NewMap);
+            stats(NewMap);
 
         {Pid, top} ->
-            L = [{User, Level, WinS, LossS} || {User, #data{level = Level, win_streak = WinS, loss = LossS}} <- maps:to_list(Map)],
+            L = [{User, Level, WinS, LossS} || {User, #data{level = Level, win_streak = WinS, lose_streak = LossS}} <- maps:to_list(Map)],
             L1 = lists:sort(fun aux/2,L),
-            Top10 =lists:sublist(L1, 10),
+            Top10 = lists:sublist(L1, 10),
             Pid ! Top10, 
-            status(Map);
+            stats(Map);
         save ->
             Bin = term_to_binary(Map),
-            file:write_file("storage/status.bin", Bin),
-            status(Map);
+            file:write_file("storage/stats.bin", Bin),
+            stats(Map);
         stop->
             Bin = term_to_binary(Map),
-            file:write_file("storage/status.bin", Bin)
+            file:write_file("storage/stats.bin", Bin)
 
     end.

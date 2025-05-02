@@ -7,7 +7,7 @@ create_account(User ,Pass ) ->
     ?MODULE ! {self(), create_account, User, Pass},
     receive
         ok ->
-            status:insert(User),
+            stats:insert(User),
             ok;
         user_exists ->
             user_exists
