@@ -1,10 +1,8 @@
 -module(status).
 
--export([start/0, insert/1, get_level/1, addWin/1, addLoss/1, top10/0, save/0, stop/0]).
+-export([start/0, insert/1, get_level/1, add_win/1, add_loss/1, top10/0, save/0, stop/0]).
 
 -record(data, {level = 1, win = 0, loss = 0, win_streak = 0, lose_streak = 0}).
-
-
 
 start() ->
     case file:read_file("storage/status.bin") of 
@@ -15,6 +13,7 @@ start() ->
     end,
     Pid = spawn(fun() -> status(Map) end),
     register(?MODULE, Pid).
+
 insert(User) ->
     erlang:display("hello"),
     ?MODULE ! {self(), insert, User},
@@ -25,19 +24,21 @@ get_level(User) ->
     ?MODULE ! {self(), level, User},
     receive Msg -> Msg end.
 
-addWin(User) ->
+add_win(User) ->
     ?MODULE ! {self(), win, User},
     receive Msg -> Msg end.
 
-addLoss(User) ->
+add_loss(User) ->
     ?MODULE ! {self(), loss, User},
     receive Msg -> Msg end.
+
 top10() ->
     ?MODULE ! {self(), top},
     receive Msg -> Msg end.
 
 save() ->
     ?MODULE ! save.
+
 stop() ->
     ?MODULE ! stop.
 
@@ -83,8 +84,8 @@ status(Map) ->
             Win = Data#data.win,    
             WinS = Data#data.win_streak,
             if 
-                Level == WinS ->
-                    NewMap = maps:update(User, Data#data{level = Level + 1, win = Win +1,win_streak = WinS + 1, lose_streak = 0}, Map),
+                Level == WinS + 1 ->
+                    NewMap = maps:update(User, Data#data{level = Level + 1, win = Win + 1, win_streak = 0, lose_streak = 0}, Map),
                     Pid ! level_up;
                 true ->
                     NewMap = maps:update(User, Data#data{win = Win + 1, win_streak = WinS + 1, lose_streak = 0}),
@@ -98,10 +99,10 @@ status(Map) ->
             LossS = Data#data.lose_streak,
             if 
                 Level == 1 ->
-                    NewMap = maps:upate(User, Data#data{loss = Loss + 1,lose_streak = LossS + 1, win_streak = 0}),
+                    NewMap = maps:update(User, Data#data{loss = Loss + 1,lose_streak = LossS + 1, win_streak = 0}),
                     Pid ! ok;
-                Level + 2 div 2 == LossS ->
-                    NewMap = maps:update(User, Data#data{level = Level - 1, loss = Loss +1,lose_streak = 0 , win_streak = 0}, Map),
+                (Level + 1) div 2 == LossS + 1 ->
+                    NewMap = maps:update(User, Data#data{level = Level - 1, loss = Loss + 1, lose_streak = 0, win_streak = 0}, Map),
                     Pid ! level_down;
                 true ->
                     NewMap = maps:update(User, Data#data{loss = Loss + 1, lose_streak = LossS + 1, win_streak = 0}, Map),

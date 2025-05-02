@@ -8,9 +8,7 @@ start() ->
 
 find(User) ->
     Level = status:get_level(User),
-    ?MODULE ! {self(), find, Level},
-    % receive match pid
-    receive Msg -> Msg end.
+    ?MODULE ! {self(), find, Level}.
 
 find_lvl(M, L) ->
     case maps:find(L, M) of
@@ -44,8 +42,8 @@ matchmaker(Map) ->
                     erlang:display("Found match"),
                     {ok, Player2}  = maps:find(Level, Map),
                     Match = match:create([Player1, Player2]),
-                    Player1 ! {found, Match},
-                    Player2 ! {found, Match},
+                    Player1 ! {match_found, Match},
+                    Player2 ! {match_found, Match},
                     matchmaker(maps:remove(Level, Map))
             end
     end.

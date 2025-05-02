@@ -47,9 +47,9 @@ user_logged_out(Sock) ->
                 _ -> gen_tcp:send(Sock, "invalid message\n")
             end;
         {tcp_closed, _} ->
-            io:format("socket closed.~n");
+            io:format("socket closed when logged out.~n");
         {tcp_error, _} ->
-            io:format("error.~n")
+            io:format("error when logged out.~n")
     end,
     user_logged_out(Sock).
 
@@ -78,8 +78,7 @@ user_logged_in(Sock, User) ->
                         invalid -> gen_tcp:send(Sock, "user not logged\n")
                     end;
                 ["/s"] ->
-                    matchmaker:find(User),
-                    user_in_match(Sock, User);
+                    matchmaker:find(User);
                 ["/t"] ->
                     Top10 = status:top10(),
                     io:format("Top10: ~p~n", [Top10]),
@@ -88,11 +87,16 @@ user_logged_in(Sock, User) ->
                     user_logged_in(Sock, User);
                 _ -> gen_tcp:send(Sock, "invalid message\n")
             end;
+        {match_found, _} -> 
+            io:format("found match~n"),
+            user_in_match(Sock, User);
         {tcp_closed, _} ->
-            io:format("socket closed.~n"),
+            io:format("socket closed when logged in.~n"),
+            auth:logout(User),
             user_logged_out(Sock);
         {tcp_error, _} ->
-            io:format("error.~n"),
+            io:format("error when logged in.~n"),
+            auth:logout(User),
             user_logged_out(Sock)
     end,
     user_logged_in(Sock, User).
@@ -102,9 +106,18 @@ user_in_match(Sock, User) ->
     receive
         {pos, X, Y} ->
             io:format("STREAMING: x:~p y:~p~n", [X, Y]),
-            gen_tcp:send(Sock, io_lib:format("x:~p y:~p\n", [X, Y]));
+            gen_tcp:send(Sock, io_lib:format("x:~p y:~p\n", [X, Y])),
+            user_in_match(Sock, User);
         {finished, Result} ->
             gen_tcp:send(Sock, "END\n"),
             gen_tcp:send(Sock, io_lib:format("match finished: ~p\n", [Result])),
-            user_logged_in(Sock, User)
+            user_logged_in(Sock, User);
+        {tcp_closed, _} ->
+            io:format("socket closed when in match.~n"),
+            auth:logout(User),
+            user_logged_out(Sock);
+        {tcp_error, _} ->
+            io:format("error when in match.~n"),
+            auth:logout(User),
+            user_logged_out(Sock)
     end.

@@ -3,9 +3,8 @@
 
 create(Pids) -> 
     Map = maps:from_list(lists:map(fun(U) -> {U, 0} end, Pids)),
-    spawn(fun() -> loop(Map) end).
-    % timer:send_after(5000, Pid, finished),
-
+    Pid = spawn(fun() -> loop(Map) end),
+    timer:send_after(5000, Pid, finished).
 
 loop(Map) ->
     Player1Pos = {1, 1},
@@ -18,11 +17,11 @@ loop(Map) ->
              [1, 0, 0, 0, 0, 0, 1],
              [1, 1, 1, 1, 1, 1, 1]],
 
+    timer:send_after(1000, self(), ping),
+
     receive 
         ping -> 
             [Pid ! {pos, 4, 2} || Pid <- maps:keys(Map)],
-            % erlang:send_after(1000, self(), ping),
-            timer:send_after(1000, self(), ping),
             loop(Map);
         finished ->
             [{Pid1, _}, {Pid2, _}] = maps:to_list(Map),
@@ -39,6 +38,4 @@ loop(Map) ->
             end,
             Pid1 ! {finished, Result1},
             Pid2 ! {finished, Result2}
-    after 0 ->
-        timer:send_after(1000, self(), ping)
     end.
