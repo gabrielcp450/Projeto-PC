@@ -105,9 +105,9 @@ user_logged_in(Sock, User) ->
 
 user_in_match(Sock, User) ->
     receive
-        {pos, X, Y} ->
-            io:format("STREAMING: x:~p y:~p~n", [X, Y]),
-            gen_tcp:send(Sock, io_lib:format("x:~p y:~p\n", [X, Y])),
+        {pos, Pos} ->
+            io:format("STREAMING: pos:~p~n", [Pos]),
+            gen_tcp:send(Sock, io_lib:format("pos:~p\n", [Pos])),
             user_in_match(Sock, User);
         {finished, Result} ->
             gen_tcp:send(Sock, "END\n"),
