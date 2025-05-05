@@ -4,43 +4,34 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyAdapter;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.geom.AffineTransform;
 
-public class MainMenuFrame extends JFrame {
+public class MainMenuPanel extends JPanel {
     private String username;
+    private MainFrame mainFrame;
+    private JButton startGameButton;
+    private JButton rankingsButton;
+    private JButton profileButton;
+    private JButton logoutButton;
+    private JLabel welcomeLabel;
 
-    public MainMenuFrame(String username) {
-        this.username = username;
+    public MainMenuPanel(MainFrame mainFrame) {
+        this.mainFrame = mainFrame;
         
-        setTitle("Duelo - Main Menu");
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(900, 600); // Frame mais alto para acomodar botões verticais
-        setLocationRelativeTo(null);
-        setResizable(false);
-        getContentPane().setBackground(new Color(240, 240, 240));
-
-        // Main panel with rounded corners
-        JPanel mainPanel = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2d.setColor(Color.WHITE);
-                g2d.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 20, 20));
-            }
-        };
-        mainPanel.setLayout(new BorderLayout());
-        mainPanel.setOpaque(false);
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        setLayout(new BorderLayout());
+        setOpaque(false);
+        setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
 
         // Welcome message
-        JLabel welcomeLabel = new JLabel("Welcome, " + username + "!");
+        welcomeLabel = new JLabel("Welcome, " + username + "!");
+        welcomeLabel.setName("welcomeLabel");
         welcomeLabel.setFont(new Font("Arial", Font.BOLD, 24));
         welcomeLabel.setForeground(new Color(52, 73, 94));
         welcomeLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        mainPanel.add(welcomeLabel, BorderLayout.NORTH);
+        add(welcomeLabel, BorderLayout.NORTH);
 
         // Menu buttons
         JPanel buttonPanel = new JPanel();
@@ -50,40 +41,55 @@ public class MainMenuFrame extends JFrame {
         buttonPanel.add(Box.createHorizontalGlue());
 
         // Start Game button
-        JButton startGameButton = createMenuButton("Start Game", new Color(46, 204, 113));
-        startGameButton.addActionListener(e -> {
-            CustomDialog.showInfoDialog(this, "Game starting...");
-        });
+        startGameButton = createMenuButton("Start Game", new Color(46, 204, 113));
+        startGameButton.setMnemonic(KeyEvent.VK_S); // Alt+S para Start Game
+        startGameButton.addActionListener(e -> startGame());
 
         // Rankings button
-        JButton rankingsButton = createMenuButton("Rankings", new Color(52, 152, 219));
-        rankingsButton.addActionListener(e -> {
-            CustomDialog.showInfoDialog(this, "Opening rankings...");
-        });
+        rankingsButton = createMenuButton("Rankings", new Color(52, 152, 219));
+        rankingsButton.setMnemonic(KeyEvent.VK_R); // Alt+R para Rankings
+        rankingsButton.addActionListener(e -> showRankings());
 
         // Profile button
-        JButton profileButton = createMenuButton("Profile", new Color(155, 89, 182));
-        profileButton.addActionListener(e -> {
-            CustomDialog.showInfoDialog(this, "Opening profile...");
-        });
+        profileButton = createMenuButton("Profile", new Color(155, 89, 182));
+        profileButton.setMnemonic(KeyEvent.VK_P); // Alt+P para Profile
+        profileButton.addActionListener(e -> showProfile());
 
         // Logout button
-        JButton logoutButton = createMenuButton("Logout", new Color(231, 76, 60));
-        logoutButton.addActionListener(e -> {
-            int result = JOptionPane.showConfirmDialog(
-                this,
-                "Are you sure you want to logout?",
-                "Logout",
-                JOptionPane.YES_NO_OPTION,
-                JOptionPane.QUESTION_MESSAGE
-            );
-            
-            if (result == JOptionPane.YES_OPTION) {
-                AuthManager.clearSession();
-                dispose();
-                new LoginFrame().setVisible(true);
+        logoutButton = createMenuButton("Logout", new Color(231, 76, 60));
+        logoutButton.setMnemonic(KeyEvent.VK_L); // Alt+L para Logout
+        logoutButton.addActionListener(e -> logout());
+
+        // Adiciona KeyListener para Enter nos botões
+        KeyStroke enterKeyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0);
+        Action enterAction = new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                Component focused = KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
+                if (focused == startGameButton) {
+                    startGame();
+                } else if (focused == rankingsButton) {
+                    showRankings();
+                } else if (focused == profileButton) {
+                    showProfile();
+                } else if (focused == logoutButton) {
+                    logout();
+                }
             }
-        });
+        };
+
+        // Registra a ação Enter para todos os botões
+        startGameButton.getInputMap().put(enterKeyStroke, "enterAction");
+        startGameButton.getActionMap().put("enterAction", enterAction);
+        
+        rankingsButton.getInputMap().put(enterKeyStroke, "enterAction");
+        rankingsButton.getActionMap().put("enterAction", enterAction);
+        
+        profileButton.getInputMap().put(enterKeyStroke, "enterAction");
+        profileButton.getActionMap().put("enterAction", enterAction);
+        
+        logoutButton.getInputMap().put(enterKeyStroke, "enterAction");
+        logoutButton.getActionMap().put("enterAction", enterAction);
 
         buttonPanel.add(Box.createHorizontalGlue());
         buttonPanel.add(startGameButton);
@@ -95,11 +101,42 @@ public class MainMenuFrame extends JFrame {
         buttonPanel.add(logoutButton);
         buttonPanel.add(Box.createHorizontalGlue());
 
-        mainPanel.add(buttonPanel, BorderLayout.CENTER);
+        add(buttonPanel, BorderLayout.CENTER);
 
-        // Add main panel to frame
-        getContentPane().setLayout(new BorderLayout());
-        getContentPane().add(mainPanel, BorderLayout.CENTER);
+        // Adiciona KeyListener para Escape
+        addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                    logout();
+                }
+            }
+        });
+        setFocusable(true);
+    }
+
+    public void setUsername(String username) {
+        this.username = username;
+        welcomeLabel.setText("Welcome, " + username + "!");
+    }
+
+    private void startGame() {
+        // TODO: Implementar lógica do jogo
+        CustomDialog.showInfoDialog(mainFrame, "Game functionality coming soon!");
+    }
+
+    private void showRankings() {
+        // TODO: Implementar visualização de rankings
+        CustomDialog.showInfoDialog(mainFrame, "Rankings functionality coming soon!");
+    }
+
+    private void showProfile() {
+        // TODO: Implementar visualização do perfil
+        CustomDialog.showInfoDialog(mainFrame, "Profile functionality coming soon!");
+    }
+
+    private void logout() {
+        mainFrame.showLoginPanel();
     }
 
     private JButton createMenuButton(String text, Color color) {
@@ -210,7 +247,7 @@ public class MainMenuFrame extends JFrame {
         button.setFont(new Font("Arial", Font.BOLD, 20));
         button.setBackground(color);
         button.setForeground(Color.WHITE);
-        button.setFocusPainted(false);
+        button.setFocusPainted(true); // Mantém o indicador de foco visível
         button.setBorderPainted(false);
         button.setOpaque(true);
         button.setCursor(new Cursor(Cursor.HAND_CURSOR));
@@ -228,5 +265,14 @@ public class MainMenuFrame extends JFrame {
         });
         
         return button;
+    }
+
+    @Override
+    protected void paintComponent(Graphics g) {
+        super.paintComponent(g);
+        Graphics2D g2d = (Graphics2D) g;
+        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.setColor(Color.WHITE);
+        g2d.fill(new RoundRectangle2D.Float(0, 0, getWidth(), getHeight(), 20, 20));
     }
 } 

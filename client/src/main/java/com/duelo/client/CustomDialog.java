@@ -2,103 +2,93 @@ package com.duelo.client;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.geom.RoundRectangle2D;
-import java.awt.image.BufferedImage;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyAdapter;
 
 public class CustomDialog {
-    private static final Color SUCCESS_COLOR = new Color(46, 204, 113);
-    private static final Color ERROR_COLOR = new Color(231, 76, 60);
-    private static final Color INFO_COLOR = new Color(52, 152, 219);
-
-    public static void showSuccessDialog(JFrame parent, String message) {
-        showDialog(parent, message, "Success", SUCCESS_COLOR, "✓");
+    public static void showErrorDialog(Component parent, String message) {
+        JDialog dialog = createDialog(parent, "Error", message, new Color(231, 76, 60));
+        JButton okButton = createButton("OK", new Color(231, 76, 60));
+        setupDialog(dialog, okButton);
     }
 
-    public static void showErrorDialog(JFrame parent, String message) {
-        showDialog(parent, message, "Error", ERROR_COLOR, "✕");
+    public static void showSuccessDialog(Component parent, String message) {
+        JDialog dialog = createDialog(parent, "Success", message, new Color(46, 204, 113));
+        JButton okButton = createButton("OK", new Color(46, 204, 113));
+        setupDialog(dialog, okButton);
     }
 
-    public static void showInfoDialog(JFrame parent, String message) {
-        showDialog(parent, message, "Information", INFO_COLOR, "i");
+    public static void showInfoDialog(Component parent, String message) {
+        JDialog dialog = createDialog(parent, "Information", message, new Color(52, 152, 219));
+        JButton okButton = createButton("OK", new Color(52, 152, 219));
+        setupDialog(dialog, okButton);
     }
 
-    private static void showDialog(JFrame parent, String message, String title, Color color, String symbol) {
-        JDialog dialog = new JDialog(parent, title, true);
-        dialog.setSize(350, 200);
-        dialog.setLocationRelativeTo(parent);
+    private static JDialog createDialog(Component parent, String title, String message, Color color) {
+        JFrame frame = (JFrame) SwingUtilities.getWindowAncestor(parent);
+        JDialog dialog = new JDialog(frame, title, true);
+        dialog.setLayout(new BorderLayout());
         dialog.setResizable(false);
-        dialog.getContentPane().setBackground(Color.WHITE);
+        dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
 
-        JPanel mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
-        mainPanel.setBackground(Color.WHITE);
+        JPanel messagePanel = new JPanel(new BorderLayout());
+        messagePanel.setBorder(BorderFactory.createEmptyBorder(20, 20, 20, 20));
+        messagePanel.setBackground(Color.WHITE);
 
-        // Title panel
-        JPanel titlePanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
-        titlePanel.setBackground(Color.WHITE);
-        JLabel titleLabel = new JLabel(title);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        titleLabel.setForeground(color);
-        titlePanel.add(titleLabel);
-        mainPanel.add(titlePanel, BorderLayout.NORTH);
-
-        // Content panel
-        JPanel contentPanel = new JPanel(new BorderLayout(20, 20));
-        contentPanel.setBackground(Color.WHITE);
-
-        // Icon
-        JLabel iconLabel = new JLabel();
-        iconLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        iconLabel.setIcon(new ImageIcon(createIcon(color, symbol)));
-        contentPanel.add(iconLabel, BorderLayout.WEST);
-
-        // Message
-        JLabel messageLabel = new JLabel("<html><div style='text-align: center; width: 200px;'>" + message + "</div></html>");
-        messageLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        JLabel messageLabel = new JLabel(message);
         messageLabel.setFont(new Font("Arial", Font.PLAIN, 14));
-        contentPanel.add(messageLabel, BorderLayout.CENTER);
+        messageLabel.setForeground(new Color(52, 73, 94));
+        messagePanel.add(messageLabel, BorderLayout.CENTER);
 
-        mainPanel.add(contentPanel, BorderLayout.CENTER);
+        dialog.add(messagePanel, BorderLayout.CENTER);
+        return dialog;
+    }
 
-        // OK button
-        JButton okButton = new JButton("OK");
-        okButton.setBackground(color);
-        okButton.setForeground(Color.WHITE);
-        okButton.setFocusPainted(false);
-        okButton.setBorderPainted(false);
-        okButton.setOpaque(true);
-        okButton.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        okButton.setPreferredSize(new Dimension(100, 30));
-        okButton.addActionListener(e -> dialog.dispose());
+    private static JButton createButton(String text, Color color) {
+        JButton button = new JButton(text);
+        button.setFont(new Font("Arial", Font.BOLD, 14));
+        button.setBackground(color);
+        button.setForeground(Color.WHITE);
+        button.setFocusPainted(true);
+        button.setBorderPainted(false);
+        button.setOpaque(true);
+        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        button.setPreferredSize(new Dimension(100, 35));
+        button.setMnemonic(KeyEvent.VK_O); // Alt+O para OK
+        return button;
+    }
 
+    private static void setupDialog(JDialog dialog, JButton okButton) {
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.CENTER));
         buttonPanel.setBackground(Color.WHITE);
         buttonPanel.add(okButton);
-        mainPanel.add(buttonPanel, BorderLayout.SOUTH);
 
-        dialog.add(mainPanel);
+        dialog.add(buttonPanel, BorderLayout.SOUTH);
+
+        // Adiciona KeyListener para Enter e Escape
+        dialog.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER || e.getKeyCode() == KeyEvent.VK_ESCAPE) {
+                    dialog.dispose();
+                }
+            }
+        });
+
+        // Adiciona KeyListener para Enter no botão
+        okButton.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    dialog.dispose();
+                }
+            }
+        });
+
+        okButton.addActionListener(e -> dialog.dispose());
+
+        dialog.pack();
+        dialog.setLocationRelativeTo(dialog.getOwner());
         dialog.setVisible(true);
-    }
-
-    private static Image createIcon(Color color, String symbol) {
-        int size = 60;
-        BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_INT_ARGB);
-        Graphics2D g2d = image.createGraphics();
-        g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        
-        // Draw circle
-        g2d.setColor(color);
-        g2d.fillOval(0, 0, size, size);
-        
-        // Draw symbol
-        g2d.setColor(Color.WHITE);
-        g2d.setFont(new Font("Arial", Font.BOLD, 24));
-        FontMetrics fm = g2d.getFontMetrics();
-        int x = (size - fm.stringWidth(symbol)) / 2;
-        int y = ((size - fm.getHeight()) / 2) + fm.getAscent();
-        g2d.drawString(symbol, x, y);
-        
-        g2d.dispose();
-        return image;
     }
 } 

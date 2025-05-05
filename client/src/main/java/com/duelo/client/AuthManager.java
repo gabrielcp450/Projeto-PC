@@ -1,84 +1,91 @@
 package com.duelo.client;
 
 import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.net.Socket;
 
 public class AuthManager {
-    private static final String USERS_FILE = "users.dat";
-    private static final String SESSION_FILE = "user_session.txt";
-    private Map<String, String> users;
+    private static final String SERVER_HOST = "localhost";
+    private static final int SERVER_PORT = 12446;
 
     public AuthManager() {
-        users = new HashMap<>();
-        loadUsers();
-    }
-
-    private void loadUsers() {
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(USERS_FILE))) {
-            users = (Map<String, String>) ois.readObject();
-        } catch (FileNotFoundException e) {
-            // File doesn't exist yet, that's okay
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
-        }
-    }
-
-    private void saveUsers() {
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(USERS_FILE))) {
-            oos.writeObject(users);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     public boolean register(String username, String password) {
-        if (users.containsKey(username)) {
+        try (Socket sock = new Socket(SERVER_HOST, SERVER_PORT);
+             PrintWriter out = new PrintWriter(sock.getOutputStream(), true);
+             BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()))) {
+            
+            // Lê a primeira linha (bem-vindo)
+            String welcome = in.readLine();
+            System.out.println("Server welcome: " + welcome);
+            
+            // Envia comando de criação de conta
+            out.println("/c " + username + " " + password);
+            String response = in.readLine();
+            System.out.println("Register response: " + response);
+            
+            // Se o usuário já existe, retorna false imediatamente
+            if (response != null && response.equals("username already used")) {
+                return false;
+            }
+            
+            // Se chegou aqui, o usuário foi criado com sucesso
+            // Envia comando save
+            out.println("/save");
+            response = in.readLine();
+            System.out.println("Save response: " + response);
+            
+            return response != null && response.equals("OK");
+        } catch (IOException e) {
+            e.printStackTrace();
             return false;
         }
-        users.put(username, password);
-        saveUsers();
-        return true;
     }
 
     public boolean login(String username, String password) {
-        String storedPassword = users.get(username);
-        return storedPassword != null && storedPassword.equals(password);
+        try (Socket sock = new Socket(SERVER_HOST, SERVER_PORT);
+             PrintWriter out = new PrintWriter(sock.getOutputStream(), true);
+             BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()))) {
+            
+            // Lê a primeira linha (bem-vindo)
+            String welcome = in.readLine();
+            System.out.println("Server welcome: " + welcome);
+            
+            // Envia comando de login
+            out.println("/l " + username + " " + password);
+            String response = in.readLine();
+            System.out.println("Login response: " + response);
+            
+            return response != null && response.equals("user logged in");
+        } catch (IOException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public boolean unregister(String username) {
-        if (!users.containsKey(username)) {
-            return false;
-        }
-        users.remove(username);
-        saveUsers();
-        return true;
-    }
-
-    public static void saveSession(String username) {
-        try (FileWriter fw = new FileWriter(SESSION_FILE)) {
-            fw.write(username);
+        try (Socket sock = new Socket(SERVER_HOST, SERVER_PORT);
+             PrintWriter out = new PrintWriter(sock.getOutputStream(), true);
+             BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()))) {
+            
+            // Lê a primeira linha (bem-vindo)
+            String welcome = in.readLine();
+            System.out.println("Server welcome: " + welcome);
+            
+            // Envia comando de remoção de conta
+            out.println("/r " + username);
+            String response = in.readLine();
+            System.out.println("Unregister response: " + response);
+            
+            // Envia comando save
+            out.println("/save");
+            response = in.readLine();
+            System.out.println("Save response: " + response);
+            
+            return response != null && response.equals("OK");
         } catch (IOException e) {
             e.printStackTrace();
-        }
-    }
-
-    public static String loadSession() {
-        try (BufferedReader br = new BufferedReader(new FileReader(SESSION_FILE))) {
-            String username = br.readLine();
-            if (username != null && !username.trim().isEmpty()) {
-                return username.trim();
-            }
-        } catch (IOException e) {
-            // Ignore, session does not exist
-        }
-        return null;
-    }
-
-    public static void clearSession() {
-        File f = new File(SESSION_FILE);
-        if (f.exists()) {
-            f.delete();
+            return false;
         }
     }
 } 
