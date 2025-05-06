@@ -18,6 +18,8 @@ public class GameManager {
     private Game game;
     private ExecutorService executor;
     private boolean inGame = false;
+    private boolean isInQueue = false;
+    private String opponent = null;
 
     private GameManager() {
         this.executor = Executors.newSingleThreadExecutor();
@@ -44,6 +46,9 @@ public class GameManager {
 
     public boolean connect() {
         try {
+            if (socket != null && !socket.isClosed()) {
+                return true;
+            }
             socket = new Socket(SERVER_HOST, SERVER_PORT);
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
@@ -67,37 +72,55 @@ public class GameManager {
     }
 
     public void enterQueue() {
-        executor.execute(() -> {
-            try {
-                // Envia comando para entrar na fila
-                out.println("/s");
-                System.out.println("Entered queue");
+        if (!isInQueue && connect()) {
+            out.println("/s"); // Comando para procurar partida
+            isInQueue = true;
+            startQueueListener();
+        }
+    }
 
-                // Aguarda resposta do servidor
-                String response;
-                while ((response = in.readLine()) != null) {
-                    System.out.println("Server: " + response);
-                    if (response.startsWith("match found:")) {
-                        inGame = true;
-                        SwingUtilities.invokeLater(() -> {
+    public void leaveQueue() {
+        if (isInQueue && connect()) {
+            // O servidor não tem comando específico para sair da fila
+            // A conexão será fechada e reaberta quando necessário
+            isInQueue = false;
+            disconnect();
+        }
+    }
+
+    private void startQueueListener() {
+        new Thread(() -> {
+            try {
+                while (isInQueue) {
+                    String response = in.readLine();
+                    if (response != null) {
+                        System.out.println("Server: " + response);
+                        if (response.startsWith("match found:")) {
+                            // Formato: "match found: User1 vs User2"
+                            String[] parts = response.substring(12).split(" vs ");
+                            opponent = parts[1].trim();
+                            isInQueue = false;
+                            inGame = true;
                             if (game != null) {
-                                game.onGameStart();
+                                game.onMatchFound(opponent);
                             }
-                        });
-                        break;
+                            break;
+                        }
                     }
                 }
             } catch (IOException e) {
                 e.printStackTrace();
+                isInQueue = false;
             }
-        });
+        }).start();
     }
 
-    public void leaveQueue() {
-        if (inGame) {
-            out.println("/leave");
-            inGame = false;
-        }
+    public boolean isInQueue() {
+        return isInQueue;
+    }
+
+    public String getOpponent() {
+        return opponent;
     }
 
     public void sendPlayerPosition(double x, double y) {
@@ -126,7 +149,7 @@ public class GameManager {
 
         // Envia comando de logout
         System.out.println("Sending logout command");
-        out.println("/l");
+        out.println("/e");
 
         // Espera a resposta do servidor
         String response = in.readLine();
@@ -147,6 +170,7 @@ public class GameManager {
             socket = null;
             out = null;
             in = null;
+            inGame = false;
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -13,6 +13,7 @@ import java.util.Random;
  * Estados do jogo:
  * - LOGIN: Tela de autenticação
  * - MENU: Menu principal
+ * - QUEUE: Busca de partida
  * - GAME: Jogo em andamento
  * - RANKINGS: Visualização de rankings
  * - PROFILE: Perfil do jogador
@@ -45,7 +46,7 @@ public class Game extends PApplet {
     
     // Game states
     private enum GameState {
-        LOGIN, MENU, GAME, RANKINGS, PROFILE
+        LOGIN, MENU, QUEUE, GAME, RANKINGS, PROFILE
     }
     
     // Current state
@@ -63,6 +64,7 @@ public class Game extends PApplet {
     
     // Auth manager
     private AuthManager authManager;
+    private GameManager gameManager;
     
     // Game elements
     private Player player;
@@ -96,8 +98,10 @@ public class Game extends PApplet {
         buttonFont = createFont("Arial-Bold", 20);
         inputFont = createFont("Arial", 16);
         
-        // Initialize auth manager
+        // Initialize managers
         authManager = AuthManager.getInstance();
+        gameManager = GameManager.getInstance();
+        gameManager.setGame(this);
         
         // Initialize game elements
         random = new Random();
@@ -114,6 +118,9 @@ public class Game extends PApplet {
                 break;
             case MENU:
                 drawMenu();
+                break;
+            case QUEUE:
+                drawQueue();
                 break;
             case GAME:
                 updateGame();
@@ -200,6 +207,23 @@ public class Game extends PApplet {
         text(label, x, y);
     }
     
+    private void drawQueue() {
+        // Title
+        textFont(titleFont);
+        fill(TEXT_COLOR);
+        text("Searching for Match", width/2, height/2 - 50);
+        
+        // Loading animation
+        float size = 50 + 10 * sin(frameCount * 0.1f);
+        noFill();
+        stroke(PRIMARY_COLOR);
+        strokeWeight(3);
+        ellipse(width/2, height/2 + 50, size, size);
+        
+        // Cancel button
+        drawButton(width/2, height - 100, "Cancel Search", ACCENT_COLOR);
+    }
+    
     private void drawGame() {
         // Game area
         background(200);
@@ -276,6 +300,9 @@ public class Game extends PApplet {
             case MENU:
                 handleMenuClick();
                 break;
+            case QUEUE:
+                handleQueueClick();
+                break;
             case GAME:
                 handleGameClick();
                 break;
@@ -329,8 +356,8 @@ public class Game extends PApplet {
     private void handleMenuClick() {
         // Play button
         if (isMouseOver(width/2, 250, BUTTON_WIDTH, BUTTON_HEIGHT)) {
-            currentState = GameState.GAME;
-            initializeGame();
+            currentState = GameState.QUEUE;
+            gameManager.enterQueue();
         }
         
         // Rankings button
@@ -368,6 +395,14 @@ public class Game extends PApplet {
     private void handleRankingsClick() {
         // Back button
         if (isMouseOver(width/2, height - 50, BUTTON_WIDTH, BUTTON_HEIGHT)) {
+            currentState = GameState.MENU;
+        }
+    }
+    
+    private void handleQueueClick() {
+        // Cancel button
+        if (isMouseOver(width/2, height - 100, BUTTON_WIDTH, BUTTON_HEIGHT)) {
+            gameManager.leaveQueue();
             currentState = GameState.MENU;
         }
     }
@@ -555,5 +590,10 @@ public class Game extends PApplet {
         if (player != null) {
             player.applyModifier(type);
         }
+    }
+    
+    public void onMatchFound(String opponentName) {
+        currentState = GameState.GAME;
+        initializeGame();
     }
 } 
