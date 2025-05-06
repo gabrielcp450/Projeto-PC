@@ -8,7 +8,7 @@ import javax.swing.SwingUtilities;
 
 public class GameManager {
     private static final String SERVER_HOST = "localhost";
-    private static final int SERVER_PORT = 12547;
+    private static final int SERVER_PORT = 13556;
     
     private static GameManager instance;
     private Socket socket;

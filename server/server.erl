@@ -2,7 +2,7 @@
 -export([start/0, stop/0]).
 
 start() -> 
-    Pid = spawn(fun() -> server(12547) end),
+    Pid = spawn(fun() -> server(13556) end),
     register(server, Pid),
     Pid.
 
