@@ -1,30 +1,36 @@
 # Duelo Client
 
-This is the client application for the Duelo game project.
+Cliente para o jogo Duelo, implementado em Java usando Processing.
 
-## Requirements
+## Estrutura do Projeto
 
-- Java 17 or higher
-- Maven
+- `DueloGame.java` - Classe principal que estende PApplet e gerencia o jogo
+- `Menu.java` - Classe base para todos os menus
+- `LoginMenu.java` - Menu de login
+- `MainMenu.java` - Menu principal
+- `RankingsMenu.java` - Menu de rankings
+- `ProfileMenu.java` - Menu de perfil
+- `GameManager.java` - Gerencia a conexão com o servidor
+- `AuthManager.java` - Gerencia autenticação
 
-## Building and Running
+## Como Executar
 
-### Using Shell Scripts
-- `crun.sh` - Builds and runs the application
-- `run.sh` - Runs the application (must be built first)
+1. Certifique-se de ter o Java 11 ou superior instalado
+2. Execute o comando Maven:
+   ```bash
+   mvn clean package
+   ```
+3. Execute o jar gerado:
+   ```bash
+   java -jar target/duelo-client-1.0-SNAPSHOT.jar
+   ```
 
-### Manual Build and Run
-To build the project, run:
+## Controles
 
-```bash
-mvn clean package
-```
-
-To run the application, execute:
-
-```bash
-java -cp target/duelo-client-1.0-SNAPSHOT.jar com.duelo.client.Main
-```
+- WASD - Movimento do jogador
+- Mouse - Mirar
+- Clique do Mouse - Atirar
+- ESC - Voltar ao menu principal
 
 ## Features
 

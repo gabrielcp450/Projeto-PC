@@ -1,11 +1,9 @@
-/home/tuai/Uni/pc/Projeto-PC/client/src/main/java/com/duelo/client/MainMenuPanel.java
-/home/tuai/Uni/pc/Projeto-PC/client/src/main/java/com/duelo/client/CharacterCustomizationDialog.java
-/home/tuai/Uni/pc/Projeto-PC/client/src/main/java/com/duelo/client/MainFrame.java
+/home/tuai/Uni/pc/Projeto-PC/client/src/main/java/com/duelo/client/MainMenu.java
+/home/tuai/Uni/pc/Projeto-PC/client/src/main/java/com/duelo/client/LoginMenu.java
+/home/tuai/Uni/pc/Projeto-PC/client/src/main/java/com/duelo/client/ProfileMenu.java
+/home/tuai/Uni/pc/Projeto-PC/client/src/main/java/com/duelo/client/RankingsMenu.java
 /home/tuai/Uni/pc/Projeto-PC/client/src/main/java/com/duelo/client/GameManager.java
-/home/tuai/Uni/pc/Projeto-PC/client/src/main/java/com/duelo/client/RankingsPanel.java
-/home/tuai/Uni/pc/Projeto-PC/client/src/main/java/com/duelo/client/LoginPanel.java
-/home/tuai/Uni/pc/Projeto-PC/client/src/main/java/com/duelo/client/GamePanel.java
+/home/tuai/Uni/pc/Projeto-PC/client/src/main/java/com/duelo/client/DueloGame.java
 /home/tuai/Uni/pc/Projeto-PC/client/src/main/java/com/duelo/client/Main.java
+/home/tuai/Uni/pc/Projeto-PC/client/src/main/java/com/duelo/client/Menu.java
 /home/tuai/Uni/pc/Projeto-PC/client/src/main/java/com/duelo/client/AuthManager.java
-/home/tuai/Uni/pc/Projeto-PC/client/src/main/java/com/duelo/client/CustomDialog.java
-/home/tuai/Uni/pc/Projeto-PC/client/src/main/java/com/duelo/client/ProfilePanel.java

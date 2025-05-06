@@ -4,7 +4,6 @@ import java.io.*;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import javax.swing.SwingUtilities;
 
 public class GameManager {
     private static final String SERVER_HOST = "localhost";
@@ -15,7 +14,7 @@ public class GameManager {
     private PrintWriter out;
     private BufferedReader in;
     private String username;
-    private GamePanel gamePanel;
+    private DueloGame game;
     private ExecutorService executor;
     private boolean inGame = false;
 
@@ -58,8 +57,8 @@ public class GameManager {
         }
     }
 
-    public void setGamePanel(GamePanel gamePanel) {
-        this.gamePanel = gamePanel;
+    public void setGame(DueloGame game) {
+        this.game = game;
     }
 
     public void setUsername(String username) {
@@ -79,11 +78,9 @@ public class GameManager {
                     System.out.println("Server: " + response);
                     if (response.startsWith("match found:")) {
                         inGame = true;
-                        SwingUtilities.invokeLater(() -> {
-                            if (gamePanel != null) {
-                                gamePanel.onGameStart();
-                            }
-                        });
+                        if (game != null) {
+                            game.onGameStart();
+                        }
                         break;
                     }
                 }
