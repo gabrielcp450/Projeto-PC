@@ -28,7 +28,11 @@ user_logged_out(Sock) ->
             case string:tokens(Data, " \n") of
                 ["/c", User, Pass] ->
                     case auth:create_account(User, Pass) of
-                        ok -> gen_tcp:send(Sock, "user created\n");
+                        ok -> 
+                            gen_tcp:send(Sock, "user created\n"),
+                            auth:save(),
+                            stats:save(),
+                            gen_tcp:send(Sock, "save completed\n");
                         user_exists -> gen_tcp:send(Sock, "username already used\n")
                     end;
                 ["/l", User, Pass] ->
@@ -43,7 +47,8 @@ user_logged_out(Sock) ->
                     end;
                 ["/save"] -> 
                     auth:save(),
-                    stats:save();
+                    stats:save(),
+                    gen_tcp:send(Sock, "save completed\n");
                 _ -> gen_tcp:send(Sock, "invalid message\n")
             end;
         {tcp_closed, _} ->
