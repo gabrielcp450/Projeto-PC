@@ -17,7 +17,7 @@ public class LoginPanel extends JPanel {
 
     public LoginPanel(MainFrame mainFrame) {
         this.mainFrame = mainFrame;
-        this.authManager = new AuthManager();
+        this.authManager = AuthManager.getInstance();
         
         setLayout(new GridBagLayout());
         setOpaque(false);
@@ -167,7 +167,7 @@ public class LoginPanel extends JPanel {
 
         if (authManager.login(username, password)) {
             CustomDialog.showSuccessDialog(mainFrame, "Login successful!");
-            mainFrame.showMainMenuPanel(username);
+            mainFrame.showMainMenu(username);
         } else {
             CustomDialog.showErrorDialog(mainFrame, "Invalid username or password");
         }
@@ -191,7 +191,7 @@ public class LoginPanel extends JPanel {
             // Se a personalização foi concluída, fazer login
             if (customDialog.isCustomizationComplete()) {
                 if (authManager.login(username, password)) {
-                    mainFrame.showMainMenuPanel(username);
+                    mainFrame.showMainMenu(username);
                 }
             }
         } else {

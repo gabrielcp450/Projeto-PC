@@ -11,7 +11,7 @@ class client {
             return;
         }
 
-        Socket sock = new Socket("localhost", 12546);
+        Socket sock = new Socket("localhost", 13556);
         
         PrintWriter out = new PrintWriter(sock.getOutputStream(), true);
         BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));

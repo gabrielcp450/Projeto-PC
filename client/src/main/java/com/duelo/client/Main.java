@@ -7,7 +7,7 @@ public class Main {
         // Garante que a interface seja criada na thread de eventos do Swing
         SwingUtilities.invokeLater(() -> {
             MainFrame mainFrame = new MainFrame();
-            mainFrame.showLoginPanel();
+            mainFrame.showLogin();
             mainFrame.setVisible(true);
         });
     }

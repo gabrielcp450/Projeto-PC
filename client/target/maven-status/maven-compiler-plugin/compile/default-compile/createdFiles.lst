@@ -1,5 +1,7 @@
 com/duelo/client/LoginPanel$4.class
+com/duelo/client/GamePanel.class
 com/duelo/client/MainMenuPanel$1AnimatedButton.class
+com/duelo/client/GameManager.class
 com/duelo/client/CustomDialog$2.class
 com/duelo/client/Main.class
 com/duelo/client/MainFrame.class
@@ -13,6 +15,7 @@ com/duelo/client/CharacterCustomizationDialog.class
 com/duelo/client/MainMenuPanel.class
 com/duelo/client/MainMenuPanel$1.class
 com/duelo/client/LoginPanel$2.class
+com/duelo/client/GamePanel$Projectile.class
 com/duelo/client/MainMenuPanel$3.class
 com/duelo/client/CustomDialog.class
 com/duelo/client/LoginPanel$3.class

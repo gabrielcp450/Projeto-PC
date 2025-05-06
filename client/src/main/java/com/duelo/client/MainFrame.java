@@ -8,6 +8,7 @@ public class MainFrame extends JFrame {
     private JPanel mainPanel;
     private LoginPanel loginPanel;
     private MainMenuPanel mainMenuPanel;
+    private GamePanel gamePanel;
 
     public MainFrame() {
         setTitle("Duelo");
@@ -25,7 +26,7 @@ public class MainFrame extends JFrame {
         // Create panels
         loginPanel = new LoginPanel(this);
         mainMenuPanel = new MainMenuPanel(this);
-
+        
         // Add panels to card layout
         mainPanel.add(loginPanel, "LOGIN");
         mainPanel.add(mainMenuPanel, "MAIN_MENU");
@@ -35,16 +36,26 @@ public class MainFrame extends JFrame {
         getContentPane().add(mainPanel, BorderLayout.CENTER);
 
         // Show login panel by default
-        showLoginPanel();
+        cardLayout.show(mainPanel, "LOGIN");
     }
 
-    public void showLoginPanel() {
+    public void showMainMenu(String username) {
+        mainMenuPanel.setUsername(username);
+        cardLayout.show(mainPanel, "MAIN_MENU");
+    }
+
+    public void showLogin() {
         loginPanel.clearFields();
         cardLayout.show(mainPanel, "LOGIN");
     }
 
-    public void showMainMenuPanel(String username) {
-        mainMenuPanel.setUsername(username);
-        cardLayout.show(mainPanel, "MAIN_MENU");
+    public void showGamePanel(String username) {
+        if (gamePanel != null) {
+            mainPanel.remove(gamePanel);
+        }
+        gamePanel = new GamePanel(this, username);
+        mainPanel.add(gamePanel, "GAME");
+        cardLayout.show(mainPanel, "GAME");
+        gamePanel.requestFocusInWindow();
     }
 } 

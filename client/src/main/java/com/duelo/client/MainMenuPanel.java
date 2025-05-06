@@ -2,10 +2,7 @@ package com.duelo.client;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyAdapter;
+import java.awt.event.*;
 import java.awt.geom.RoundRectangle2D;
 import java.awt.geom.AffineTransform;
 
@@ -112,6 +109,7 @@ public class MainMenuPanel extends JPanel {
                 }
             }
         });
+
         setFocusable(true);
     }
 
@@ -121,8 +119,7 @@ public class MainMenuPanel extends JPanel {
     }
 
     private void startGame() {
-        // TODO: Implementar lógica do jogo
-        CustomDialog.showInfoDialog(mainFrame, "Game functionality coming soon!");
+        mainFrame.showGamePanel(username);
     }
 
     private void showRankings() {
@@ -136,7 +133,7 @@ public class MainMenuPanel extends JPanel {
     }
 
     private void logout() {
-        mainFrame.showLoginPanel();
+        mainFrame.showLogin();
     }
 
     private JButton createMenuButton(String text, Color color) {
