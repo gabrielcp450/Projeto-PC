@@ -2,6 +2,8 @@ package com.duelo.client;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.ArrayList;
+import java.util.List;
 
 public class AuthManager {
     private static AuthManager instance;
@@ -115,5 +117,38 @@ public class AuthManager {
 
     public String getCurrentUser() {
         return currentUser;
+    }
+
+    public List<RankingEntry> getRankings() {
+        try {
+            // Conecta ao servidor
+            Socket socket = new Socket("localhost", 1234);
+            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+            ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+            
+            // Envia requisição de rankings
+            out.writeObject("top10");
+            out.flush();
+            
+            // Recebe lista de rankings
+            @SuppressWarnings("unchecked")
+            List<Object[]> rankings = (List<Object[]>) in.readObject();
+            
+            // Converte para RankingEntry
+            List<RankingEntry> entries = new ArrayList<>();
+            for (Object[] entry : rankings) {
+                String username = (String) entry[0];
+                int level = (int) entry[1];
+                entries.add(new RankingEntry(username, level));
+            }
+            
+            // Fecha conexão
+            socket.close();
+            
+            return entries;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return new ArrayList<>();
+        }
     }
 } 

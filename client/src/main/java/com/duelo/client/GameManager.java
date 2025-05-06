@@ -15,7 +15,7 @@ public class GameManager {
     private PrintWriter out;
     private BufferedReader in;
     private String username;
-    private GamePanel gamePanel;
+    private Game game;
     private ExecutorService executor;
     private boolean inGame = false;
 
@@ -58,8 +58,8 @@ public class GameManager {
         }
     }
 
-    public void setGamePanel(GamePanel gamePanel) {
-        this.gamePanel = gamePanel;
+    public void setGame(Game game) {
+        this.game = game;
     }
 
     public void setUsername(String username) {
@@ -80,8 +80,8 @@ public class GameManager {
                     if (response.startsWith("match found:")) {
                         inGame = true;
                         SwingUtilities.invokeLater(() -> {
-                            if (gamePanel != null) {
-                                gamePanel.onGameStart();
+                            if (game != null) {
+                                game.onGameStart();
                             }
                         });
                         break;
