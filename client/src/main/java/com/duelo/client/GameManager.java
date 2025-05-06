@@ -116,6 +116,26 @@ public class GameManager {
         return inGame;
     }
 
+    public void logout() throws IOException {
+        if (socket == null || socket.isClosed()) {
+            throw new IOException("Not connected to server");
+        }
+        if (out == null || in == null) {
+            throw new IOException("Streams not initialized");
+        }
+
+        // Envia comando de logout
+        System.out.println("Sending logout command");
+        out.println("/l");
+
+        // Espera a resposta do servidor
+        String response = in.readLine();
+        System.out.println("Server response to logout: " + response);
+
+        // Fecha a conexão
+        disconnect();
+    }
+
     public void disconnect() {
         try {
             leaveQueue();
@@ -123,8 +143,23 @@ public class GameManager {
                 socket.close();
             }
             executor.shutdown();
+            // Limpa as referências
+            socket = null;
+            out = null;
+            in = null;
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    public void sendCommand(String command) throws IOException {
+        if (socket == null || socket.isClosed()) {
+            throw new IOException("Not connected to server");
+        }
+        if (out == null) {
+            throw new IOException("Output stream not initialized");
+        }
+        System.out.println("Sending command: " + command);
+        out.println(command);
     }
 } 

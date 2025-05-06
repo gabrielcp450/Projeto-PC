@@ -44,11 +44,20 @@ java -cp target/duelo-client-1.0-SNAPSHOT.jar com.duelo.client.Main
 - Game queue system for matchmaking
 - Synchronized game state between players
 
+### Rankings and Levels
+- Global player rankings
+- Win/loss statistics
+- Win rate calculation
+- Player levels and XP system
+- Progress tracking
+- Tabbed interface for rankings and levels
+
 ### User Interface
 - Single window application with smooth transitions
 - Login and registration panel
 - Main menu with game options
 - In-game interface with player status
+- Rankings and levels display
 - Keyboard navigation support
 - Visual feedback for player actions
 - Responsive game controls
@@ -61,6 +70,7 @@ java -cp target/duelo-client-1.0-SNAPSHOT.jar com.duelo.client.Main
   - `LoginPanel.java` - Login and registration interface
   - `MainMenuPanel.java` - Main menu with game options
   - `GamePanel.java` - Game interface and mechanics
+  - `RankingsPanel.java` - Rankings and levels display
   - `AuthManager.java` - Handles user authentication
   - `GameManager.java` - Manages game state and server communication
   - `CustomDialog.java` - Custom dialog for character customization

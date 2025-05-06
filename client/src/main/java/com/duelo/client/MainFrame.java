@@ -9,13 +9,16 @@ public class MainFrame extends JFrame {
     private LoginPanel loginPanel;
     private MainMenuPanel mainMenuPanel;
     private GamePanel gamePanel;
+    private RankingsPanel rankingsPanel;
+    private ProfilePanel profilePanel;
+    private String currentUsername;
 
     public MainFrame() {
-        setTitle("Duelo");
+        setTitle("Duelo Game");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setResizable(false);
         setSize(900, 600);
         setLocationRelativeTo(null);
-        setResizable(false);
         getContentPane().setBackground(new Color(240, 240, 240));
 
         // Setup card layout for switching between panels
@@ -26,10 +29,12 @@ public class MainFrame extends JFrame {
         // Create panels
         loginPanel = new LoginPanel(this);
         mainMenuPanel = new MainMenuPanel(this);
+        rankingsPanel = new RankingsPanel(this, currentUsername);
         
         // Add panels to card layout
         mainPanel.add(loginPanel, "LOGIN");
-        mainPanel.add(mainMenuPanel, "MAIN_MENU");
+        mainPanel.add(mainMenuPanel, "MENU");
+        mainPanel.add(rankingsPanel, "RANKINGS");
 
         // Add main panel to frame
         getContentPane().setLayout(new BorderLayout());
@@ -39,14 +44,16 @@ public class MainFrame extends JFrame {
         cardLayout.show(mainPanel, "LOGIN");
     }
 
-    public void showMainMenu(String username) {
-        mainMenuPanel.setUsername(username);
-        cardLayout.show(mainPanel, "MAIN_MENU");
+    public void showLogin() {
+        cardLayout.show(mainPanel, "LOGIN");
+        loginPanel.requestFocusInWindow();
     }
 
-    public void showLogin() {
-        loginPanel.clearFields();
-        cardLayout.show(mainPanel, "LOGIN");
+    public void showMainMenu(String username) {
+        this.currentUsername = username;
+        mainMenuPanel.setUsername(username);
+        cardLayout.show(mainPanel, "MENU");
+        mainMenuPanel.requestFocusInWindow();
     }
 
     public void showGamePanel(String username) {
@@ -57,5 +64,29 @@ public class MainFrame extends JFrame {
         mainPanel.add(gamePanel, "GAME");
         cardLayout.show(mainPanel, "GAME");
         gamePanel.requestFocusInWindow();
+    }
+
+    public void showRankings() {
+        if (rankingsPanel != null) {
+            mainPanel.remove(rankingsPanel);
+        }
+        rankingsPanel = new RankingsPanel(this, currentUsername);
+        mainPanel.add(rankingsPanel, "RANKINGS");
+        cardLayout.show(mainPanel, "RANKINGS");
+        rankingsPanel.requestFocusInWindow();
+    }
+
+    public void showProfile(String username) {
+        if (profilePanel != null) {
+            mainPanel.remove(profilePanel);
+        }
+        profilePanel = new ProfilePanel(this, username);
+        mainPanel.add(profilePanel, "PROFILE");
+        cardLayout.show(mainPanel, "PROFILE");
+        profilePanel.requestFocusInWindow();
+    }
+
+    public String getCurrentUsername() {
+        return currentUsername;
     }
 } 

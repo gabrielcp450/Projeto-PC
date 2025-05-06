@@ -123,17 +123,21 @@ public class MainMenuPanel extends JPanel {
     }
 
     private void showRankings() {
-        // TODO: Implementar visualização de rankings
-        CustomDialog.showInfoDialog(mainFrame, "Rankings functionality coming soon!");
+        mainFrame.showRankings();
     }
 
     private void showProfile() {
-        // TODO: Implementar visualização do perfil
-        CustomDialog.showInfoDialog(mainFrame, "Profile functionality coming soon!");
+        mainFrame.showProfile(username);
     }
 
     private void logout() {
-        mainFrame.showLogin();
+        try {
+            // Usa o novo método logout do GameManager
+            GameManager.getInstance().logout();
+            mainFrame.showLogin();
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error logging out: " + ex.getMessage());
+        }
     }
 
     private JButton createMenuButton(String text, Color color) {
