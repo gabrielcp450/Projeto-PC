@@ -2,6 +2,7 @@ package com.duelo.client;
 
 import processing.core.PApplet;
 import processing.core.PFont;
+import processing.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -74,6 +75,14 @@ public class Game extends PApplet {
     private long lastModifierSpawn;
     private static final int MODIFIER_SPAWN_INTERVAL = 5000; // 5 segundos
     private static final int MAX_MODIFIERS_PER_TYPE = 3;
+    
+    // Cache
+    private List<GameManager.RankingEntry> cachedRankings = new ArrayList<>();
+    private boolean rankingsLoaded = false;
+    
+    // Scroll variables
+    private float rankingScrollY = 0;
+    private float rankingMaxScroll = 0;
     
     public void settings() {
         size(WINDOW_WIDTH, WINDOW_HEIGHT);
@@ -243,46 +252,96 @@ public class Game extends PApplet {
     }
     
     private void drawRankings() {
-        // Title
+        background(BACKGROUND_COLOR);
+        
+        // Título
         textFont(titleFont);
         fill(TEXT_COLOR);
-        text("Rankings", width/2, 80);
-        
-        // Back button
-        drawButton(width/2, height - 50, "Back to Menu", SECONDARY_COLOR);
-        
-        // Rankings table header
-        textFont(buttonFont);
-        fill(TEXT_COLOR);
-        textAlign(LEFT, CENTER);
-        text("Rank", width/4, 150);
-        text("Player", width/2, 150);
-        text("Level", width * 3/4, 150);
-        
-        // Get rankings from server
-        List<RankingEntry> rankings = authManager.getRankings();
-        
-        // Draw rankings
-        textFont(inputFont);
-        for (int i = 0; i < rankings.size(); i++) {
-            RankingEntry entry = rankings.get(i);
-            float y = 200 + i * 40;
-            
-            // Rank number
-            fill(TEXT_COLOR);
-            textAlign(LEFT, CENTER);
-            text("#" + (i + 1), width/4, y);
-            
-            // Player name
-            text(entry.getUsername(), width/2, y);
-            
-            // Level
-            textAlign(RIGHT, CENTER);
-            text("Level " + entry.getLevel(), width * 3/4, y);
-        }
-        
-        // Reset text alignment
         textAlign(CENTER, CENTER);
+        text("Rankings", width/2, 60);
+        
+        // Parâmetros da tabela
+        int tableWidth = 700;
+        int colRank = width/2 - tableWidth/2 + 40;
+        int colPlayer = colRank + 80;
+        int colLevel = colPlayer + 220;
+        int colWin = colLevel + 100;
+        int colLoss = colWin + 100;
+        int rowStart = 130; // Cabeçalho ainda mais acima
+        int rowHeight = 48;
+        int headerHeight = 54;
+        int numCols = 5;
+        int visibleRows = 7;
+        int tableX = width/2 - tableWidth/2;
+        int tableY = rowStart - headerHeight/2;
+        int tableHeight = headerHeight + visibleRows * rowHeight;
+        int usersAreaTop = rowStart + headerHeight/2 + 16; // Limite superior da área dos users (mais abaixo)
+        int usersAreaBottom = usersAreaTop + visibleRows * rowHeight - 16; // Limite inferior (mais restrito)
+
+        // Fundo da tabela
+        fill(255, 255, 255, 220);
+        stroke(220);
+        strokeWeight(2);
+        rect(width/2, tableY + tableHeight/2, tableWidth, tableHeight + 20, 18);
+
+        // Cabeçalho (fixo)
+        fill(PRIMARY_COLOR);
+        noStroke();
+        rect(width/2, rowStart, tableWidth, headerHeight, 16);
+        textFont(buttonFont);
+        fill(255);
+        textAlign(LEFT, CENTER);
+        text("Rank", colRank, rowStart);
+        text("Player", colPlayer, rowStart);
+        text("Level", colLevel, rowStart);
+        text("Win Streak", colWin, rowStart);
+        text("Loss Streak", colLoss, rowStart);
+
+        // Dados
+        List<GameManager.RankingEntry> rankings = cachedRankings;
+        textFont(inputFont);
+        int totalRows = rankings.size();
+        rankingMaxScroll = max(0, (totalRows - visibleRows) * rowHeight);
+        rankingScrollY = constrain(rankingScrollY, 0, rankingMaxScroll);
+        for (int i = 0; i < totalRows; i++) {
+            int y = rowStart + headerHeight/2 + (i+1)*rowHeight - (int)rankingScrollY;
+            // Só desenha linhas de dados dentro da área visível (abaixo do cabeçalho)
+            if (y < usersAreaTop || y > usersAreaBottom) continue;
+            // Linhas alternadas
+            if (i % 2 == 0) {
+                fill(240, 245, 255, 180);
+            } else {
+                fill(255, 255, 255, 180);
+            }
+            noStroke();
+            rect(width/2, y, tableWidth-8, rowHeight-6, 12);
+
+            // Destaque para o top 3
+            if (i == 0) fill(255, 215, 0); // Ouro
+            else if (i == 1) fill(192, 192, 192); // Prata
+            else if (i == 2) fill(205, 127, 50); // Bronze
+            else fill(TEXT_COLOR);
+            textAlign(LEFT, CENTER);
+            text((i+1) + ".", colRank, y);
+
+            fill(TEXT_COLOR);
+            text(rankings.get(i).getUsername(), colPlayer, y);
+            text(String.valueOf(rankings.get(i).getLevel()), colLevel, y);
+            text(String.valueOf(rankings.get(i).getWinStreak()), colWin, y);
+            text(String.valueOf(rankings.get(i).getLossStreak()), colLoss, y);
+        }
+
+        // Botão voltar
+        int btnW = 220, btnH = 54;
+        int btnY = height - 70;
+        fill(PRIMARY_COLOR);
+        stroke(180);
+        strokeWeight(2);
+        rect(width/2, btnY, btnW, btnH, 16);
+        fill(255);
+        textFont(buttonFont);
+        textAlign(CENTER, CENTER);
+        text("Back", width/2, btnY);
     }
     
     private void drawProfile() {
@@ -363,6 +422,10 @@ public class Game extends PApplet {
         // Rankings button
         if (isMouseOver(width/2, 330, BUTTON_WIDTH, BUTTON_HEIGHT)) {
             currentState = GameState.RANKINGS;
+            if (!rankingsLoaded) {
+                cachedRankings = gameManager.getRankings();
+                rankingsLoaded = true;
+            }
         }
         
         // Profile button
@@ -394,8 +457,10 @@ public class Game extends PApplet {
     
     private void handleRankingsClick() {
         // Back button
-        if (isMouseOver(width/2, height - 50, BUTTON_WIDTH, BUTTON_HEIGHT)) {
+        if (isMouseOver(width/2, height - 70, BUTTON_WIDTH, BUTTON_HEIGHT)) {
             currentState = GameState.MENU;
+            rankingsLoaded = false;
+            rankingScrollY = 0;
         }
     }
     
@@ -595,5 +660,14 @@ public class Game extends PApplet {
     public void onMatchFound(String opponentName) {
         currentState = GameState.GAME;
         initializeGame();
+    }
+    
+    public void mouseWheel(MouseEvent event) {
+        if (currentState == GameState.RANKINGS) {
+            float e = event.getCount();
+            rankingScrollY += e * 32; // 32 pixels por scroll
+            rankingScrollY = constrain(rankingScrollY, 0, rankingMaxScroll);
+            System.out.println("[DEBUG] mouseWheel chamado: e=" + e + ", rankingScrollY=" + rankingScrollY);
+        }
     }
 } 

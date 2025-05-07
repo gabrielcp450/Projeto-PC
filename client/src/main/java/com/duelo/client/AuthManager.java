@@ -33,8 +33,8 @@ public class AuthManager {
 
             if (response.equals("user created")) {
                 // Espera pela resposta do save que o servidor envia automaticamente
-                response = gameManager.getIn().readLine();
-                System.out.println("Save response: " + response);
+            response = gameManager.getIn().readLine();
+            System.out.println("Save response: " + response);
                 return response.equals("save completed");
             }
             return false;
