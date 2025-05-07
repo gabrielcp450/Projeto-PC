@@ -47,8 +47,8 @@ matchmaker(Map) ->
                     erlang:display("Found match"),
                     {ok, {Pid2, User2}}  = maps:find(Level, Map),
                     match:create(Pid1, Pid2),
-                    Pid1 ! {match_found, 1, User2},
-                    Pid2 ! {match_found, 2, User1},
+                    Pid1 ! {match_found, 0, User2},
+                    Pid2 ! {match_found, 1, User1},
                     matchmaker(maps:remove(Level, Map))
             end;
         {Pid, cancel, L} ->
