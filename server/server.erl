@@ -28,7 +28,11 @@ user_logged_out(Sock) ->
             case string:tokens(Data, " \n") of
                 ["/c", User, Pass] ->
                     case auth:create_account(User, Pass) of
-                        ok -> gen_tcp:send(Sock, "user created\n");
+                        ok -> 
+                            gen_tcp:send(Sock, "user created\n"),
+                            auth:save(),
+                            stats:save(),
+                            gen_tcp:send(Sock, "save completed\n");
                         user_exists -> gen_tcp:send(Sock, "username already used\n")
                     end;
                 ["/l", User, Pass] ->
@@ -43,7 +47,8 @@ user_logged_out(Sock) ->
                     end;
                 ["/save"] -> 
                     auth:save(),
-                    stats:save();
+                    stats:save(),
+                    gen_tcp:send(Sock, "save completed\n");
                 _ -> gen_tcp:send(Sock, "invalid message\n")
             end;
         {tcp_closed, _} ->
@@ -79,6 +84,8 @@ user_logged_in(Sock, User) ->
                     end;
                 ["/s"] ->
                     matchmaker:find(User);
+                ["/s-"] ->
+                    matchmaker:cancel(User);
                 ["/t"] ->
                     Top10 = stats:top10(),
                     io:format("Top10: ~p~n", [Top10]),
@@ -87,10 +94,13 @@ user_logged_in(Sock, User) ->
                     user_logged_in(Sock, User);
                 _ -> gen_tcp:send(Sock, "invalid message\n")
             end;
-        {match_found, _, Opponent} -> 
-            Str = io_lib:format("match found: ~p vs ~p~n", [User, Opponent]),
+        {match_found, MyId, Opponent} -> 
+            Str = io_lib:format("!found ~p ~p~n", [MyId, Opponent]),
             gen_tcp:send(Sock, lists:flatten(Str)),
             user_in_match(Sock, User);
+        {match_cancelled} ->
+            io:format("match search cancelled: ~p~n", [User]),
+            gen_tcp:send(Sock, "!cancelled\n");
         {tcp_closed, _} ->
             io:format("socket closed when logged in.~n"),
             auth:logout(User),
@@ -105,17 +115,16 @@ user_logged_in(Sock, User) ->
 
 user_in_match(Sock, User) ->
     receive
-        {pos, Pos} ->
-            io:format("STREAMING: pos:~p~n", [Pos]),
-            gen_tcp:send(Sock, io_lib:format("pos:~p\n", [Pos])),
+        {player_pos, Id, {X, Y}} ->
+            gen_tcp:send(Sock, io_lib:format("!player_pos ~p ~p ~p\n", [Id, X, Y])),
             user_in_match(Sock, User);
         {finished, Result} ->
-            gen_tcp:send(Sock, "END\n"),
-            gen_tcp:send(Sock, io_lib:format("match finished: ~p\n", [Result])),
-            case Result of
-                win -> stats:add_win(User);
-                loss -> stats:add_loss(User)
-            end,
+            io:format("match finished~n"),
+            gen_tcp:send(Sock, io_lib:format("!finished ~p\n", [Result])),
+            % case Result of
+            %     win -> stats:add_win(User);
+            %     loss -> stats:add_loss(User)
+            % end,
             user_logged_in(Sock, User);
         {tcp_closed, _} ->
             io:format("socket closed when in match.~n"),
