@@ -3,6 +3,9 @@ package com.duelo.client;
 import processing.core.PApplet;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Classe que representa um jogador no jogo.
@@ -43,6 +46,15 @@ public class Player {
     private float shootCooldownMultiplier = 1.0f;
     private long modifierEndTime = 0;
     private static final long MODIFIER_DURATION = 5000; // 5 seconds
+    
+    // Métodos para HUD
+    private int level = 1;
+    private int winStreak = 0;
+    private int lossStreak = 0;
+    private Modifier.Type activeModifierType = null;
+    
+    // Modifiers ativos: tipo -> tempo de expiração
+    private Map<Modifier.Type, Long> activeModifiers = new HashMap<>();
     
     public Player(float x, float y, int color, PApplet app) {
         this.x = x;
@@ -119,10 +131,18 @@ public class Player {
             }
         }
         
-        // Check if modifier effects have expired
-        if (System.currentTimeMillis() > modifierEndTime) {
-            resetModifiers();
+        // Remover modifiers expirados
+        long now = System.currentTimeMillis();
+        Iterator<Map.Entry<Modifier.Type, Long>> it = activeModifiers.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<Modifier.Type, Long> entry = it.next();
+            if (now > entry.getValue()) {
+                it.remove();
+            }
         }
+        
+        // Atualizar efeitos
+        updateModifierEffects();
     }
     
     public void shoot(float targetX, float targetY) {
@@ -150,26 +170,55 @@ public class Player {
     }
     
     public void applyModifier(Modifier.Type type) {
-        switch (type) {
-            case GREEN:
-                projectileSpeedMultiplier = 1.5f;
-                break;
-            case ORANGE:
-                projectileSpeedMultiplier = 0.75f;
-                break;
-            case BLUE:
-                shootCooldownMultiplier = 0.75f;
-                break;
-            case RED:
-                shootCooldownMultiplier = 1.5f;
-                break;
+        // Cancelar opostos
+        if (type == Modifier.Type.GREEN && activeModifiers.containsKey(Modifier.Type.ORANGE)) {
+            activeModifiers.remove(Modifier.Type.ORANGE);
+            return;
         }
-        modifierEndTime = System.currentTimeMillis() + MODIFIER_DURATION;
+        if (type == Modifier.Type.ORANGE && activeModifiers.containsKey(Modifier.Type.GREEN)) {
+            activeModifiers.remove(Modifier.Type.GREEN);
+            return;
+        }
+        if (type == Modifier.Type.BLUE && activeModifiers.containsKey(Modifier.Type.RED)) {
+            activeModifiers.remove(Modifier.Type.RED);
+            return;
+        }
+        if (type == Modifier.Type.RED && activeModifiers.containsKey(Modifier.Type.BLUE)) {
+            activeModifiers.remove(Modifier.Type.BLUE);
+            return;
+        }
+        // Adiciona/atualiza tempo
+        activeModifiers.put(type, System.currentTimeMillis() + 5000);
+        updateModifierEffects();
+    }
+    
+    private void updateModifierEffects() {
+        // Reset
+        projectileSpeedMultiplier = 1.0f;
+        shootCooldownMultiplier = 1.0f;
+        // Aplica efeitos ativos
+        for (Modifier.Type t : activeModifiers.keySet()) {
+            switch (t) {
+                case GREEN:
+                    projectileSpeedMultiplier *= 1.5f;
+                    break;
+                case ORANGE:
+                    projectileSpeedMultiplier *= 0.75f;
+                    break;
+                case BLUE:
+                    shootCooldownMultiplier *= 0.75f;
+                    break;
+                case RED:
+                    shootCooldownMultiplier *= 1.5f;
+                    break;
+            }
+        }
     }
     
     private void resetModifiers() {
         projectileSpeedMultiplier = 1.0f;
         shootCooldownMultiplier = 1.0f;
+        activeModifiers.clear();
     }
     
     private int getCurrentShootCooldown() {
@@ -184,6 +233,14 @@ public class Player {
     public float getY() { return y; }
     public float getSize() { return SIZE; }
     public List<Projectile> getProjectiles() { return projectiles; }
+    
+    // Métodos para HUD
+    public int getLevel() { return level; }
+    public int getWinStreak() { return winStreak; }
+    public int getLossStreak() { return lossStreak; }
+    public boolean hasActiveModifier() { return !activeModifiers.isEmpty(); }
+    public Map<Modifier.Type, Long> getActiveModifiers() { return activeModifiers; }
+    public long getModifierTimeLeft(Modifier.Type t) { return activeModifiers.containsKey(t) ? Math.max(0, activeModifiers.get(t) - System.currentTimeMillis()) : 0; }
     
     private class Projectile {
         private static final int SIZE = 10;

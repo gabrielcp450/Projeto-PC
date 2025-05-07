@@ -35,12 +35,15 @@ public class Modifier {
     private float x, y;
     private Type type;
     private boolean active;
+    private long spawnTime;
+    private static final long MAX_LIFETIME = 10000; // 10 segundos
     
     public Modifier(float x, float y, Type type) {
         this.x = x;
         this.y = y;
         this.type = type;
         this.active = true;
+        this.spawnTime = System.currentTimeMillis();
     }
     
     public void draw(PApplet app) {
@@ -79,5 +82,9 @@ public class Modifier {
     
     public float getY() {
         return y;
+    }
+    
+    public boolean isExpired() {
+        return System.currentTimeMillis() - spawnTime > MAX_LIFETIME;
     }
 } 

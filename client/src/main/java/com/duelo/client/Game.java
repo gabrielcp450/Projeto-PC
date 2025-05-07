@@ -249,6 +249,40 @@ public class Game extends PApplet {
         if (opponent != null) {
             opponent.draw(this);
         }
+        
+        // HUD: stats e modifier ativo
+        drawHUD();
+    }
+    
+    private void drawHUD() {
+        // HUD no canto superior esquerdo
+        int hudX = 30, hudY = 30, hudW = 260, hudH = 120;
+        fill(0, 160);
+        noStroke();
+        rect(hudX + hudW/2, hudY + hudH/2, hudW, hudH + 40, 16);
+        fill(255);
+        textFont(inputFont);
+        textAlign(LEFT, TOP);
+        int line = 0;
+        text("Level: " + (player != null ? player.getLevel() : "-"), hudX + 16, hudY + 12 + line*24); line++;
+        text("Win Streak: " + (player != null ? player.getWinStreak() : "-"), hudX + 16, hudY + 12 + line*24); line++;
+        text("Loss Streak: " + (player != null ? player.getLossStreak() : "-"), hudX + 16, hudY + 12 + line*24); line++;
+        // Modifiers ativos
+        if (player != null && player.hasActiveModifier()) {
+            int modLine = 0;
+            for (Modifier.Type type : player.getActiveModifiers().keySet()) {
+                long timeLeft = player.getModifierTimeLeft(type) / 1000;
+                String modName = "";
+                switch (type) {
+                    case GREEN: modName = "Projectile Speed ↑"; break;
+                    case ORANGE: modName = "Projectile Speed ↓"; break;
+                    case BLUE: modName = "Cooldown ↓"; break;
+                    case RED: modName = "Cooldown ↑"; break;
+                }
+                text("Modifier: " + modName + " (" + timeLeft + "s)", hudX + 16, hudY + 12 + line*24 + modLine*22);
+                modLine++;
+            }
+        }
     }
     
     private void drawRankings() {
@@ -604,14 +638,14 @@ public class Game extends PApplet {
     private void updateGame() {
         if (player != null) {
             player.update();
-            
             // Spawn modifiers
             long currentTime = System.currentTimeMillis();
             if (currentTime - lastModifierSpawn > MODIFIER_SPAWN_INTERVAL) {
                 spawnModifier();
                 lastModifierSpawn = currentTime;
             }
-            
+            // Remover modifiers expirados
+            modifiers.removeIf(m -> m.isExpired());
             // Check modifier collisions
             for (Modifier modifier : modifiers) {
                 if (modifier.isActive() && modifier.checkCollision(player.getX(), player.getY(), player.getSize())) {
