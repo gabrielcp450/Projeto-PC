@@ -1,4 +1,4 @@
-package com.duelo.client;
+package com.duelo.client.utils;
 
 import java.util.ArrayList;
 import java.util.List;

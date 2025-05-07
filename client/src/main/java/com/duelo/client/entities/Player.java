@@ -1,4 +1,4 @@
-package com.duelo.client;
+package com.duelo.client.entities;
 
 import processing.core.PApplet;
 
@@ -20,10 +20,10 @@ import processing.core.PApplet;
 public class Player {
     private static final int SIZE = 40;
     
-    private float x, y;
+    private int x, y;
     private int color;
     
-    public Player(float x, float y, int color) {
+    public Player(int x, int y, int color) {
         this.x = x;
         this.y = y;
         this.color = color;
@@ -41,11 +41,11 @@ public class Player {
     //     }
     // }
     
-    public void draw(PApplet app) {
+    public void draw(PApplet p) {
         // Draw player
-        app.fill(color);
-        app.noStroke();
-        app.ellipse(x, y, SIZE, SIZE);
+        p.fill(color);
+        p.noStroke();
+        p.ellipse(x, y, SIZE, SIZE);
         
         // // Draw projectiles
         // for (Projectile p : projectiles) {

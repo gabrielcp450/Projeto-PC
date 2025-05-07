@@ -29,16 +29,15 @@ user_logged_out(Sock) ->
                 ["/c", User, Pass] ->
                     case auth:create_account(User, Pass) of
                         ok -> 
-                            gen_tcp:send(Sock, "user created\n"),
                             auth:save(),
                             stats:save(),
-                            gen_tcp:send(Sock, "save completed\n");
+                            gen_tcp:send(Sock, "!ok\n");
                         user_exists -> gen_tcp:send(Sock, "username already used\n")
                     end;
                 ["/l", User, Pass] ->
                     case auth:login(User, Pass) of
                         ok ->
-                            gen_tcp:send(Sock, "user logged in\n"),
+                            gen_tcp:send(Sock, "!ok\n"),
                             user_logged_in(Sock, User);
                         already_logged ->
                             gen_tcp:send(Sock, "user already logged in\n");
@@ -48,7 +47,7 @@ user_logged_out(Sock) ->
                 ["/save"] -> 
                     auth:save(),
                     stats:save(),
-                    gen_tcp:send(Sock, "save completed\n");
+                    gen_tcp:send(Sock, "!ok\n");
                 _ -> gen_tcp:send(Sock, "invalid message\n")
             end;
         {tcp_closed, _} ->
@@ -66,20 +65,20 @@ user_logged_in(Sock, User) ->
                     io:format("hello ~p~n", [User]),
                     case auth:logout(User) of
                         ok -> 
-                            gen_tcp:send(Sock, "user logged out\n"),
+                            gen_tcp:send(Sock, "!ok\n"),
                             user_logged_out(Sock);
                         invalid -> gen_tcp:send(Sock, "user not logged\n")
                     end;
                 ["/d"] ->
                     case auth:close_account(User) of
                         ok -> 
-                            gen_tcp:send(Sock, "user deleted\n"),
+                            gen_tcp:send(Sock, "!ok\n"),
                             user_logged_out(Sock);
                         invalid -> gen_tcp:send(Sock, "user not logged\n")
                     end;
                 ["/c", NewPass] ->
                     case auth:change_pass(User, NewPass) of
-                        ok -> gen_tcp:send(Sock, "user password changed\n");
+                        ok -> gen_tcp:send(Sock, "!ok\n");
                         invalid -> gen_tcp:send(Sock, "user not logged\n")
                     end;
                 ["/s"] ->
