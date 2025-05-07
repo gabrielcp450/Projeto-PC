@@ -78,7 +78,8 @@ user_logged_in(Sock, User) ->
                         invalid -> gen_tcp:send(Sock, "user not logged\n")
                     end;
                 ["/s"] ->
-                    matchmaker:find(User);
+                    matchmaker:find(User),
+                    user_logged_in(Sock, User);
                 ["/t"] ->
                     Top10 = stats:top10(),
                     io:format("Top10: ~p~n", [Top10]),
@@ -87,10 +88,10 @@ user_logged_in(Sock, User) ->
                     user_logged_in(Sock, User);
                 _ -> gen_tcp:send(Sock, "invalid message\n")
             end;
-        {match_found, _, Opponent} -> 
+        {match_found, Match, Opponent} -> 
             Str = io_lib:format("match found: ~p vs ~p~n", [User, Opponent]),
             gen_tcp:send(Sock, lists:flatten(Str)),
-            user_in_match(Sock, User);
+            user_in_match(Sock, Match, User);
         {tcp_closed, _} ->
             io:format("socket closed when logged in.~n"),
             auth:logout(User),
@@ -103,12 +104,12 @@ user_logged_in(Sock, User) ->
     user_logged_in(Sock, User).
 
 
-user_in_match(Sock, User) ->
+user_in_match(Sock, Match, User) ->
     receive
         {pos, Pos} ->
             io:format("STREAMING: pos:~p~n", [Pos]),
-            gen_tcp:send(Sock, io_lib:format("pos:~p\n", [Pos])),
-            user_in_match(Sock, User);
+            %gen_tcp:send(Sock, io_lib:format("pos:~p\n", [Pos])),
+            user_in_match(Sock, Match, User);
         {finished, Result} ->
             gen_tcp:send(Sock, "END\n"),
             gen_tcp:send(Sock, io_lib:format("match finished: ~p\n", [Result])),
@@ -117,6 +118,18 @@ user_in_match(Sock, User) ->
                 loss -> stats:add_loss(User)
             end,
             user_logged_in(Sock, User);
+        {tcp,_, Data} ->
+            case string:tokens(Data, " \n") of
+                ["/pressed", L] ->
+                    erlang:display("hello"),
+                    Match !{self(), pressed, L};
+                ["/unpressed", L] ->
+                    Match ! {self(), unpressed, L};
+                _ ->
+                    io:format("Received unknown command: ~p~n", [Data])
+            end,
+            user_in_match(Sock, Match, User);
+
         {tcp_closed, _} ->
             io:format("socket closed when in match.~n"),
             auth:logout(User),

@@ -2,17 +2,44 @@
 -export([create/2]).
 
 -record(keys, {w = false, s = false, a = false, d = false}).
--record(player, {p = {0, 0}, v = {0.1, 0}, a = {0, 0}, points = 0, proj_v = 0, proj_i = 0, k = #keys{}}).
+-record(player, {p = {0, 0}, v = {0, 0}, a = {0, 0}, points = 0, proj_v = 0, proj_i = 0, k = #keys{}}).
 -define(TICK, 500).
 
 initial_pos(I) ->
     Px = 1/2 * (I+1) - 1/4,
     #player{p = {Px, 1/2}}.
 
+accelaration(Player) -> 
+    {Ax, Ay} = Player#player.a,
+    Keys = Player#player.k,
+    W = Keys#keys.w,
+    S = Keys#keys.s,
+    D = Keys#keys.d,
+    A = Keys#keys.a,
+
+    NewAx = case {D, A} of 
+        {true, false} ->
+            Ax + 0.1;
+        {false, true} ->
+            Ax -0.1;
+        _ ->
+            Ax
+        end,
+    NewAy = case {W, S} of
+        {true, false} ->
+            Ay + 0.1;
+        {false, true} ->
+            Ay -0.1;
+        _ ->
+            Ay
+        end,
+    {NewAx, NewAy}.
+        
 movement_player(Player) -> 
+    
     {Px, Py} = Player#player.p,
     {Vx, Vy} = Player#player.v,
-    {Ax, Ay} = Player#player.a,
+    {Ax, Ay} = accelaration(Player),
 
     Dt = ?TICK/1000,
 
@@ -25,7 +52,7 @@ movement_player(Player) ->
     NewPx = Px + NewVx*Dt + 0.5 * Ax * Dt*Dt,
     NewPy = Py + NewVy*Dt + 0.5 * Ay * Dt*Dt,
 
-    Player#player{p = {NewPx, NewPy}, v = {NewVx, NewVy}}.
+    Player#player{p = {NewPx, NewPy}, v = {NewVx, NewVy}, a = {Ax, Ay}}.
 
 movement(Pids) ->
     [{Pid1, Player1}, {Pid2, Player2}] = maps:to_list(Pids),
@@ -35,8 +62,9 @@ create(Pid1, Pid2) ->
     register(player1, Pid1),
     register(player2, Pid2),
     Pids = #{player1 => initial_pos(0), player2 => initial_pos(1)},
-    Pid = spawn(fun() -> loop(Pids) end),
-    timer:send_after(5000, Pid, finished).
+    MatchPid = spawn(fun() -> loop(Pids) end),
+    timer:send_after(5000000, MatchPid, finished),
+    MatchPid. 
 
 pressed(Pid, Pids, K) ->
     Player = maps:get(Pid, Pids),
@@ -103,7 +131,9 @@ loop(Pids) ->
             NewPids2 = collision_walls(NewPids),
             [Pid ! {pos, Player#player.p} || {Pid, Player} <- maps:to_list(NewPids2)],
             loop(NewPids2);
+        % Have to change the pid to User name
         {Pid, pressed, K} ->
+            erlang:display("Hello"),
             NewPlayer = pressed(Pid, Pids, K),
             NewPids = maps:put(Pid, NewPlayer, Pids),
             loop(NewPids);
