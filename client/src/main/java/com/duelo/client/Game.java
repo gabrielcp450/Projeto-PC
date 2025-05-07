@@ -5,7 +5,6 @@ import processing.core.PFont;
 import processing.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 
 /**
  * Classe principal do jogo Duelo implementada com Processing.
@@ -68,13 +67,9 @@ public class Game extends PApplet {
     private GameManager gameManager;
     
     // Game elements
-    private Player player;
-    private Player opponent;
-    private List<Modifier> modifiers;
-    private Random random;
-    private long lastModifierSpawn;
-    private static final int MODIFIER_SPAWN_INTERVAL = 5000; // 5 segundos
-    private static final int MAX_MODIFIERS_PER_TYPE = 3;
+    private Player[] players = {new Player(0, 0, 0xff0000ff), new Player(0, 0, 0xffff0000)};
+    private int myPlayerId;
+    // private List<Modifier> modifiers;
     
     // Cache
     private List<GameManager.RankingEntry> cachedRankings = new ArrayList<>();
@@ -83,12 +78,21 @@ public class Game extends PApplet {
     // Scroll variables
     private float rankingScrollY = 0;
     private float rankingMaxScroll = 0;
-    
+
     public void settings() {
         size(WINDOW_WIDTH, WINDOW_HEIGHT);
     }
     
     public void setup() {
+        if (this.args != null) {
+            for (int i = 0; i < this.args.length; i++) {
+                System.out.println("Argument " + i + " : " + this.args[i]);
+            }
+        }
+        if (this.args.length == 2) {
+            this.usernameInput = args[0];
+            this.passwordInput = args[1];
+        }
         surface.setResizable(false);
         currentState = GameState.LOGIN;
         textAlign(CENTER, CENTER);
@@ -113,9 +117,14 @@ public class Game extends PApplet {
         gameManager.setGame(this);
         
         // Initialize game elements
-        random = new Random();
-        modifiers = new ArrayList<>();
-        lastModifierSpawn = 0;
+        // modifiers = new ArrayList<>();
+        if (authManager.login(usernameInput, passwordInput)) {
+            currentUsername = usernameInput;
+            currentState = GameState.MENU;
+            errorMessage = "";
+        } else {
+            errorMessage = "Invalid username or password";
+        }
     }
     
     public void draw() {
@@ -237,51 +246,14 @@ public class Game extends PApplet {
         // Game area
         background(200);
         
-        // Draw modifiers
-        for (Modifier modifier : modifiers) {
-            modifier.draw(this);
-        }
+        // // Draw modifiers
+        // for (Modifier modifier : modifiers) {
+        //     modifier.draw(this);
+        // }
         
         // Draw players if they exist
-        if (player != null) {
+        for (Player player : players) {
             player.draw(this);
-        }
-        if (opponent != null) {
-            opponent.draw(this);
-        }
-        
-        // HUD: stats e modifier ativo
-        drawHUD();
-    }
-    
-    private void drawHUD() {
-        // HUD no canto superior esquerdo
-        int hudX = 30, hudY = 30, hudW = 260, hudH = 120;
-        fill(0, 160);
-        noStroke();
-        rect(hudX + hudW/2, hudY + hudH/2, hudW, hudH + 40, 16);
-        fill(255);
-        textFont(inputFont);
-        textAlign(LEFT, TOP);
-        int line = 0;
-        text("Level: " + (player != null ? player.getLevel() : "-"), hudX + 16, hudY + 12 + line*24); line++;
-        text("Win Streak: " + (player != null ? player.getWinStreak() : "-"), hudX + 16, hudY + 12 + line*24); line++;
-        text("Loss Streak: " + (player != null ? player.getLossStreak() : "-"), hudX + 16, hudY + 12 + line*24); line++;
-        // Modifiers ativos
-        if (player != null && player.hasActiveModifier()) {
-            int modLine = 0;
-            for (Modifier.Type type : player.getActiveModifiers().keySet()) {
-                long timeLeft = player.getModifierTimeLeft(type) / 1000;
-                String modName = "";
-                switch (type) {
-                    case GREEN: modName = "Projectile Speed ↑"; break;
-                    case ORANGE: modName = "Projectile Speed ↓"; break;
-                    case BLUE: modName = "Cooldown ↓"; break;
-                    case RED: modName = "Cooldown ↑"; break;
-                }
-                text("Modifier: " + modName + " (" + timeLeft + "s)", hudX + 16, hudY + 12 + line*24 + modLine*22);
-                modLine++;
-            }
         }
     }
     
@@ -484,9 +456,6 @@ public class Game extends PApplet {
     }
     
     private void handleGameClick() {
-        if (player != null) {
-            player.shoot(mouseX, mouseY);
-        }
     }
     
     private void handleRankingsClick() {
@@ -502,31 +471,35 @@ public class Game extends PApplet {
         // Cancel button
         if (isMouseOver(width/2, height - 100, BUTTON_WIDTH, BUTTON_HEIGHT)) {
             gameManager.leaveQueue();
-            currentState = GameState.MENU;
         }
+    }
+
+    public void goToMenu() {
+        currentState = GameState.MENU;
     }
     
     public void onGameStart() {
         currentState = GameState.GAME;
-        initializeGame();
     }
-    
-    private void initializeGame() {
-        player = new Player(100, height/2, color(0, 0, 255), this); // Blue player
-        opponent = new Player(width-100, height/2, color(255, 0, 0), this); // Red opponent
-        modifiers.clear();
-        lastModifierSpawn = System.currentTimeMillis();
+
+    public void onMatchFound(int myid, String opponent) {
+        currentState = GameState.GAME;
+        myPlayerId = myid;
+    }
+
+    public void onPlayerPositionChange(int id, float x, float y) {
+        players[id].setPosition((int)(x * WINDOW_WIDTH), (int)(y * WINDOW_HEIGHT));
     }
     
     public void keyPressed() {
         if (currentState == GameState.LOGIN) {
-            handleLoginKeyPress();
+            handleLoginKey(true);
         } else if (currentState == GameState.GAME) {
-            handleGameKeyPress();
+            handleGameKey(true);
         }
     }
     
-    private void handleLoginKeyPress() {
+    private void handleLoginKey(boolean pressed) {
         if (key == BACKSPACE) {
             if (isTypingUsername && usernameInput.length() > 0) {
                 usernameInput = usernameInput.substring(0, usernameInput.length() - 1);
@@ -553,39 +526,31 @@ public class Game extends PApplet {
         }
     }
     
-    private void handleGameKeyPress() {
+    private void handleGameKey(boolean pressed) {
         if (key == CODED) {
             switch (keyCode) {
                 case UP:
-                    player.setMovingUp(true);
                     break;
                 case DOWN:
-                    player.setMovingDown(true);
                     break;
                 case LEFT:
-                    player.setMovingLeft(true);
                     break;
                 case RIGHT:
-                    player.setMovingRight(true);
                     break;
             }
         } else {
             switch (key) {
                 case 'w':
                 case 'W':
-                    player.setMovingUp(true);
                     break;
                 case 's':
                 case 'S':
-                    player.setMovingDown(true);
                     break;
                 case 'a':
                 case 'A':
-                    player.setMovingLeft(true);
                     break;
                 case 'd':
                 case 'D':
-                    player.setMovingRight(true);
                     break;
             }
         }
@@ -593,107 +558,12 @@ public class Game extends PApplet {
     
     public void keyReleased() {
         if (currentState == GameState.GAME) {
-            handleGameKeyRelease();
+            handleGameKey(false);
         }
     }
-    
-    private void handleGameKeyRelease() {
-        if (key == CODED) {
-            switch (keyCode) {
-                case UP:
-                    player.setMovingUp(false);
-                    break;
-                case DOWN:
-                    player.setMovingDown(false);
-                    break;
-                case LEFT:
-                    player.setMovingLeft(false);
-                    break;
-                case RIGHT:
-                    player.setMovingRight(false);
-                    break;
-            }
-        } else {
-            switch (key) {
-                case 'w':
-                case 'W':
-                    player.setMovingUp(false);
-                    break;
-                case 's':
-                case 'S':
-                    player.setMovingDown(false);
-                    break;
-                case 'a':
-                case 'A':
-                    player.setMovingLeft(false);
-                    break;
-                case 'd':
-                case 'D':
-                    player.setMovingRight(false);
-                    break;
-            }
-        }
-    }
+
     
     private void updateGame() {
-        if (player != null) {
-            player.update();
-            // Spawn modifiers
-            long currentTime = System.currentTimeMillis();
-            if (currentTime - lastModifierSpawn > MODIFIER_SPAWN_INTERVAL) {
-                spawnModifier();
-                lastModifierSpawn = currentTime;
-            }
-            // Remover modifiers expirados
-            modifiers.removeIf(m -> m.isExpired());
-            // Check modifier collisions
-            for (Modifier modifier : modifiers) {
-                if (modifier.isActive() && modifier.checkCollision(player.getX(), player.getY(), player.getSize())) {
-                    modifier.collect();
-                    applyModifier(modifier.getType());
-                }
-            }
-        }
-        if (opponent != null) {
-            opponent.update();
-        }
-    }
-    
-    private void spawnModifier() {
-        // Count active modifiers of each type
-        int[] counts = new int[Modifier.Type.values().length];
-        for (Modifier m : modifiers) {
-            if (m.isActive()) {
-                counts[m.getType().ordinal()]++;
-            }
-        }
-        
-        // Create list of available types
-        List<Modifier.Type> availableTypes = new ArrayList<>();
-        for (Modifier.Type type : Modifier.Type.values()) {
-            if (counts[type.ordinal()] < MAX_MODIFIERS_PER_TYPE) {
-                availableTypes.add(type);
-            }
-        }
-        
-        // Spawn new modifier if possible
-        if (!availableTypes.isEmpty()) {
-            Modifier.Type type = availableTypes.get(random.nextInt(availableTypes.size()));
-            float x = random.nextFloat() * (width - 100) + 50;
-            float y = random.nextFloat() * (height - 100) + 50;
-            modifiers.add(new Modifier(x, y, type));
-        }
-    }
-    
-    private void applyModifier(Modifier.Type type) {
-        if (player != null) {
-            player.applyModifier(type);
-        }
-    }
-    
-    public void onMatchFound(String opponentName) {
-        currentState = GameState.GAME;
-        initializeGame();
     }
     
     public void mouseWheel(MouseEvent event) {

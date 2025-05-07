@@ -2,10 +2,9 @@ package com.duelo.client;
 
 import java.io.*;
 import java.net.Socket;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import javax.swing.SwingUtilities;
-import java.util.List;
 import java.util.ArrayList;
 
 public class GameManager {
@@ -19,7 +18,6 @@ public class GameManager {
     private String username;
     private Game game;
     private ExecutorService executor;
-    private boolean inGame = false;
     private boolean isInQueue = false;
     private String opponent = null;
     private List<RankingEntry> rankings = new ArrayList<>();
@@ -78,16 +76,14 @@ public class GameManager {
         if (!isInQueue && connect()) {
             out.println("/s"); // Comando para procurar partida
             isInQueue = true;
+            System.out.println("Entering queue");
             startQueueListener();
         }
     }
 
     public void leaveQueue() {
         if (isInQueue && connect()) {
-            // O servidor não tem comando específico para sair da fila
-            // A conexão será fechada e reaberta quando necessário
-            isInQueue = false;
-            disconnect();
+            out.println("/s-");
         }
     }
 
@@ -98,16 +94,31 @@ public class GameManager {
                     String response = in.readLine();
                     if (response != null) {
                         System.out.println("Server: " + response);
-                        if (response.startsWith("match found:")) {
-                            // Formato: "match found: User1 vs User2"
-                            String[] parts = response.substring(12).split(" vs ");
-                            opponent = parts[1].trim();
-                            isInQueue = false;
-                            inGame = true;
-                            if (game != null) {
-                                game.onMatchFound(opponent);
+                        Object obj = MessageParser.parseMessage(response);
+                        if (obj instanceof List) {
+                            List<?> list = (List<?>)obj;
+
+                            System.out.println("Received: " + list);
+                            
+                            if (((String)list.get(0)).compareTo("!found") == 0) {
+                                int myid = (int)list.get(1);
+                                String opponent = (String)list.get(2);
+                                if (game != null) game.onMatchFound(myid, opponent);
                             }
-                            break;
+                            else if (((String)list.get(0)).compareTo("!player_pos") == 0) {
+                                if (game != null) game.onPlayerPositionChange((int)list.get(1), (float)list.get(2), (float)list.get(3));
+                                System.out.println("Position update for "+ list.get(1) +" : " + list.get(2) + " : " + list.get(3));
+                            }
+                            else if (((String)list.get(0)).compareTo("!finished") == 0) {
+                                System.out.println("Match finished with: " + list.get(1));
+                                game.goToMenu();
+                                isInQueue = false;
+                            }
+                            else if (((String)list.get(0)).compareTo("!cancelled") == 0) {
+                                System.out.println("Match search cancelled");
+                                game.goToMenu();
+                                isInQueue = false;
+                            }
                         }
                     }
                 }
@@ -124,22 +135,6 @@ public class GameManager {
 
     public String getOpponent() {
         return opponent;
-    }
-
-    public void sendPlayerPosition(double x, double y) {
-        if (inGame) {
-            out.println(String.format("/pos %.2f %.2f", x, y));
-        }
-    }
-
-    public void sendProjectile(double x, double y, double angle) {
-        if (inGame) {
-            out.println(String.format("/proj %.2f %.2f %.2f", x, y, angle));
-        }
-    }
-
-    public boolean isInGame() {
-        return inGame;
     }
 
     public void logout() throws IOException {
@@ -173,7 +168,6 @@ public class GameManager {
             socket = null;
             out = null;
             in = null;
-            inGame = false;
         } catch (IOException e) {
             e.printStackTrace();
         }

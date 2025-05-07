@@ -1,5 +1,5 @@
 -module(matchmaker).
--export([find/1, start/0]).
+-export([start/0, find/1, cancel/1]).
 
 start() ->
     Map = #{},
@@ -9,6 +9,11 @@ start() ->
 find(User) ->
     Level = stats:get_level(User),
     ?MODULE ! {self(), find, Level, User}.
+
+cancel(User) ->
+    Level = stats:get_level(User),
+    io:format("Level of ~p is ~p~n", [User, Level]),
+    ?MODULE ! {self(), cancel, Level}.
 
 find_lvl(M, L) ->
     case maps:find(L, M) of
@@ -41,9 +46,12 @@ matchmaker(Map) ->
                 Level ->
                     erlang:display("Found match"),
                     {ok, {Pid2, User2}}  = maps:find(Level, Map),
-                    Match = match:create(Pid1, Pid2),
-                    Pid1 ! {match_found, Match, User2},
-                    Pid2 ! {match_found, Match, User1},
+                    match:create(Pid1, Pid2),
+                    Pid1 ! {match_found, 1, User2},
+                    Pid2 ! {match_found, 2, User1},
                     matchmaker(maps:remove(Level, Map))
-            end
+            end;
+        {Pid, cancel, L} ->
+            Pid ! {match_cancelled},
+            matchmaker(maps:remove(L, Map))
     end.

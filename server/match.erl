@@ -3,7 +3,7 @@
 
 -record(keys, {w = false, s = false, a = false, d = false}).
 -record(player, {p = {0, 0}, v = {0.1, 0}, a = {0, 0}, points = 0, proj_v = 0, proj_i = 0, k = #keys{}}).
--define(TICK, 500).
+-define(TICK, 50).
 
 initial_pos(I) ->
     Px = 1/2 * (I+1) - 1/4,
@@ -75,9 +75,7 @@ collision_walls(Pids) ->
                 p = (initial_pos(1))#player.p,
                 points = Points + 2
             },
-            UpdatedPids = Pids#{player1 => Player1New, player2 => Player2New},
-            [Pid ! {pos, Player#player.p} || {Pid, Player} <- maps:to_list(UpdatedPids)],
-            UpdatedPids;
+            Pids#{player1 => Player1New, player2 => Player2New};
         X2 =< 0 orelse X2 >= 1 orelse Y2 =< 0 orelse Y2 >= 1 ->
             Points = Player1#player.points,
             Player2New = Player2#player{p = (initial_pos(1))#player.p},
@@ -85,11 +83,8 @@ collision_walls(Pids) ->
                 p = (initial_pos(0))#player.p,
                 points = Points + 2
             },
-            UpdatedPids = Pids#{player1 => Player1New, player2 => Player2New},
-            [Pid ! {pos, Player#player.p} || {Pid, Player} <- maps:to_list(UpdatedPids)],
-            UpdatedPids;
+            Pids#{player1 => Player1New, player2 => Player2New};
         true ->
-            [Pid ! {pos, Player#player.p} || {Pid, Player} <- maps:to_list(Pids)],
             Pids
     end.
 
@@ -101,7 +96,12 @@ loop(Pids) ->
         update -> 
             NewPids = movement(Pids),
             NewPids2 = collision_walls(NewPids),
-            [Pid ! {pos, Player#player.p} || {Pid, Player} <- maps:to_list(NewPids2)],
+            Player1 = maps:get(player1, NewPids2),
+            Player2 = maps:get(player2, NewPids2),
+            player1 ! {player_pos, 0, Player1#player.p},
+            player1 ! {player_pos, 1, Player2#player.p},
+            player2 ! {player_pos, 0, Player1#player.p},
+            player2 ! {player_pos, 1, Player2#player.p},
             loop(NewPids2);
         {Pid, pressed, K} ->
             NewPlayer = pressed(Pid, Pids, K),
