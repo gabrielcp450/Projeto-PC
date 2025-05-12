@@ -44,4 +44,32 @@ public class PlayState {
             players[id].setPosition(x, y);
         }
     }
+    public void keyPressed(char key, int keyCode) {
+        if (keyCode == 'w') {
+            game.sendCommand("/pressed w");
+        }
+        else if (keyCode == 's') {
+            game.sendCommand("/pressed s");
+        }
+        else if (keyCode == 'a') {
+            game.sendCommand("/pressed s");
+        }
+        else if (keyCode == 'd') {
+            game.sendCommand("/pressed s");
+        }
+    }
+    public void keyReleased(char key, int keyCode) {
+        if (keyCode == 'w') {
+            game.sendCommand("/unpressed w");
+        }
+        else if (keyCode == 's') {
+            game.sendCommand("/unpressed s");
+        }
+        else if (keyCode == 'a') {
+            game.sendCommand("/unpressed s");
+        }
+        else if (keyCode == 'd') {
+            game.sendCommand("/unpressed s");
+        }
+    }
 }

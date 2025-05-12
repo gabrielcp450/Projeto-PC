@@ -120,10 +120,14 @@ public class Game extends PApplet {
     public void keyPressed() {
         switch (currentState) {
             case LOGIN: loginState.keyPressed(key, keyCode); break;
+            case PLAY: playState.keyPressed(key, keyCode); break;
         }
     }
     
     public void keyReleased() {
+        switch (currentState) {
+            case PLAY: playState.keyReleased(key, keyCode); break;
+        }
     }
     
     public void keyTyped() {

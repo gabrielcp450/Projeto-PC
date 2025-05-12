@@ -93,10 +93,10 @@ user_logged_in(Sock, User) ->
                     user_logged_in(Sock, User);
                 _ -> gen_tcp:send(Sock, "invalid message\n")
             end;
-        {match_found, MyId, Opponent} -> 
+        {match_found, MatchId, MyId, Opponent} -> 
             Str = io_lib:format("!found ~p ~p~n", [MyId, Opponent]),
             gen_tcp:send(Sock, lists:flatten(Str)),
-            user_in_match(Sock, User);
+            user_in_match(Sock, MatchId, User);
         {match_cancelled} ->
             io:format("match search cancelled: ~p~n", [User]),
             gen_tcp:send(Sock, "!cancelled\n");
@@ -112,11 +112,12 @@ user_logged_in(Sock, User) ->
     user_logged_in(Sock, User).
 
 
-user_in_match(Sock, User) ->
+user_in_match(Sock, Match, User) ->
     receive
         {player_pos, Id, {X, Y}} ->
+            io:format("!player_pos ~p ~p ~p\n", [Id, X, Y]),
             gen_tcp:send(Sock, io_lib:format("!player_pos ~p ~p ~p\n", [Id, X, Y])),
-            user_in_match(Sock, User);
+            user_in_match(Sock, Match, User);
         {finished, Result} ->
             io:format("match finished~n"),
             gen_tcp:send(Sock, io_lib:format("!finished ~p\n", [Result])),
@@ -125,6 +126,18 @@ user_in_match(Sock, User) ->
             %     loss -> stats:add_loss(User)
             % end,
             user_logged_in(Sock, User);
+        {tcp,_, Data} ->
+            case string:tokens(Data, " \n") of
+                ["/pressed", L] ->
+                    erlang:display("hello"),
+                    Match !{self(), pressed, L};
+                ["/unpressed", L] ->
+                    Match ! {self(), unpressed, L};
+                _ ->
+                    io:format("Received unknown command: ~p~n", [Data])
+            end,
+            user_in_match(Sock, Match, User);
+
         {tcp_closed, _} ->
             io:format("socket closed when in match.~n"),
             auth:logout(User),
