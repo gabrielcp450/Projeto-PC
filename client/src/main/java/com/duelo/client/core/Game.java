@@ -87,15 +87,13 @@ public class Game extends PApplet {
     }
     
     public void setup() {
-        if (this.args != null) {
-            for (int i = 0; i < this.args.length; i++) {
-                System.out.println("Argument " + i + " : " + this.args[i]);
-            }
-        }
         if (this.args.length == 2) {
             if (authManager.login(args[0], args[1]) == null) {
                 changeState(GameState.MENU);
             }
+        } else {
+            System.out.println("Usage: java -jar client.jar <username> <password>");
+            exit();
         }
 
         menuState = new MenuState(this);
@@ -200,7 +198,7 @@ public class Game extends PApplet {
             List<?> list = (List<?>)obj;
             String command = (String)list.get(0);
 
-            System.out.println("Received " + list);
+            // System.out.println("Received " + list);
             
             switch (command) {
                 case "!found": // Match found: !found <playerId> <opponentName>
@@ -217,7 +215,7 @@ public class Game extends PApplet {
                         int playerId = (Integer) list.get(1);
                         float x = (Float) list.get(2);
                         float y = (Float) list.get(3);
-                        playState.onPlayerPositionChange(playerId, (int)(x * WINDOW_WIDTH), (int)(y * WINDOW_HEIGHT));
+                        playState.onPlayerPositionChange(playerId, x, y);
                     }
                     break;
                     

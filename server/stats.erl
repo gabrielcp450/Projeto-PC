@@ -15,7 +15,6 @@ start() ->
     register(?MODULE, Pid).
 
 insert(User) ->
-    erlang:display("hello"),
     ?MODULE ! {self(), insert, User},
     receive Msg -> Msg end.
 

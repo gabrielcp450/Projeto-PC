@@ -20,13 +20,17 @@ import processing.core.PApplet;
 public class Player {
     private static final int SIZE = 40;
     
-    private int x, y;
+    private float x, y;
     private int color;
     
-    public Player(int x, int y, int color) {
+    public Player(float x, float y, int color) {
         this.x = x;
         this.y = y;
         this.color = color;
+    }
+
+    public Player clone() {
+        return new Player(x, y, color);
     }
     
     // public void shoot(float targetX, float targetY) {
@@ -43,6 +47,7 @@ public class Player {
     
     public void draw(PApplet p) {
         // Draw player
+        p.ellipseMode(PApplet.CENTER);
         p.fill(color);
         p.noStroke();
         p.ellipse(x, y, SIZE, SIZE);
@@ -53,8 +58,16 @@ public class Player {
         // }
     }
 
-    public void setPosition(int x, int y) {
+    public void setPosition(float x, float y) {
         this.x = x;
         this.y = y;
+    }
+
+    public float getX() {
+        return x;
+    }
+
+    public float getY() {
+        return y;
     }
 } 

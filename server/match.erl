@@ -3,56 +3,71 @@
 
 -record(keys, {w = false, s = false, a = false, d = false}).
 -record(player, {p = {0, 0}, v = {0, 0}, a = {0, 0}, points = 0, proj_v = 0, proj_i = 0, k = #keys{}, first = 0}).
--define(TICK, 5000).
+-define(TICK, 1).
+-define(FRICTION, 20.0).
+-define(ACCELERATION, 20.0).
 
 initial_pos(I) ->
     Px = 1/2 * (I+1) - 1/4,
     #player{p = {Px, 1/2}, first = I}.
 
-accelaration(Player) -> 
-    {Ax, Ay} = Player#player.a,
+normalize({X, Y}) ->
+    Length = math:sqrt(X*X + Y*Y),
+    case Length > 0 of
+        true -> {X/Length, Y/Length};
+        false -> {0, 0}
+    end.
+
+direction(Player) ->
     Keys = Player#player.k,
     W = Keys#keys.w,
     S = Keys#keys.s,
     D = Keys#keys.d,
     A = Keys#keys.a,
 
-    NewAx = case {D, A} of 
+    H = case {D, A} of 
         {true, false} ->
-            Ax + 0.001;
+            1;
         {false, true} ->
-            Ax -0.001;
+            -1;
         _ ->
-            Ax
+            0
         end,
-    NewAy = case {W, S} of
+    V = case {W, S} of
         {true, false} ->
-            Ay + 0.001;
+            -1;
         {false, true} ->
-            Ay -0.001;
+            1;
         _ ->
-            Ay
+            0 
         end,
-    {NewAx, NewAy}.
+    normalize({H, V}).
         
+acceleration(Player) -> 
+    {H, V} = direction(Player),
+    {H * ?ACCELERATION, V * ?ACCELERATION}.
+
 movement_player(Player) -> 
-    
     {Px, Py} = Player#player.p,
     {Vx, Vy} = Player#player.v,
-    {Ax, Ay} = accelaration(Player),
+    {Ax, Ay} = acceleration(Player),
 
-    Dt = ?TICK/1000,
+    Dt = ?TICK / 1000,
 
-    % Update velocity
-    NewVx = Vx + Ax*Dt,
-    NewVy = Vy + Ay*Dt,
+    % Calculate friction (opposes current velocity)
+    FrictionX = -?FRICTION * Vx,
+    FrictionY = -?FRICTION * Vy,
+
+    % Update velocity with both acceleration and friction
+    NewVx = Vx + (Ax + FrictionX)*Dt,
+    NewVy = Vy + (Ay + FrictionY)*Dt,
 
     % Update position
     % Position equation Δx = v0​⋅dt + 0.5⋅a⋅dt^2
-    NewPx = Px + NewVx*Dt + 0.5 * Ax * Dt*Dt,
-    NewPy = Py + NewVy*Dt + 0.5 * Ay * Dt*Dt,
+    NewPx = Px + NewVx*Dt + 0.5*(Ax + FrictionX)*Dt*Dt,
+    NewPy = Py + NewVy*Dt + 0.5*(Ay + FrictionY)*Dt*Dt,
 
-    Player#player{p = {NewPx, NewPy}, v = {NewVx, NewVy}, a = {Ax, Ay}}.
+    Player#player{p = {NewPx, NewPy}, v = {NewVx, NewVy}, a = {0, 0}}.
 
 movement(Pids) ->
     [{Pid1, Player1}, {Pid2, Player2}] = maps:to_list(Pids),
@@ -62,6 +77,7 @@ create(Pid1, Pid2) ->
     Pids = #{Pid1 => initial_pos(0), Pid2 => initial_pos(1)},
     MatchPid = spawn(fun() -> loop(Pids) end),
     timer:send_after(5000000, MatchPid, finished),
+    timer:send_after(?TICK, MatchPid, update),
     MatchPid. 
 
 pressed(Pid, Pids, K) ->
@@ -71,7 +87,8 @@ pressed(Pid, Pids, K) ->
         "w" -> Keys#keys{w = true};
         "s" -> Keys#keys{s = true};
         "a" -> Keys#keys{a = true};
-        "d" -> Keys#keys{d = true}
+        "d" -> Keys#keys{d = true};
+        _ -> Keys
     end,
     NewPlayer = Player#player{k = NewKeys},
     NewPlayer.
@@ -83,7 +100,8 @@ unpressed(Pid, Pids, K) ->
         "w" -> Keys#keys{w = false};
         "s" -> Keys#keys{s = false};
         "a" -> Keys#keys{a = false};
-        "d" -> Keys#keys{d = false}
+        "d" -> Keys#keys{d = false};
+        _ -> Keys
         end,
     NewPlayer = Player#player{k = NewKeys},
     NewPlayer.
@@ -116,9 +134,7 @@ collision_walls(Pids) ->
                 k = #keys{},
                 points = Points + 2
             },
-            UpdatedPids = Pids#{FirstPid => FirstPlayerNew, SecondPid => SecondPlayerNew},
-            [Pid ! {pos, Player#player.p} || {Pid, Player} <- maps:to_list(UpdatedPids)],
-            UpdatedPids;
+            Pids#{FirstPid => FirstPlayerNew, SecondPid => SecondPlayerNew};
         X2 =< 0 orelse X2 >= 1 orelse Y2 =< 0 orelse Y2 >= 1 ->
             erlang:display("Player2 collision"),
             Points = FirstPlayer#player.points,
@@ -134,32 +150,26 @@ collision_walls(Pids) ->
                 k = #keys{},
                 points = Points + 2
             },
-            UpdatedPids = Pids#{FirstPid => FirstPlayerNew, SecondPid => SecondPlayerNew},
-            [Pid ! {pos, Player#player.p} || {Pid, Player} <- maps:to_list(UpdatedPids)],
-            UpdatedPids;
+            Pids#{FirstPid => FirstPlayerNew, SecondPid => SecondPlayerNew};
         true ->
             Pids
     end.
 
 
 loop(Pids) ->
-    timer:send_after(?TICK, self(), update),
-
     receive 
         update -> 
             NewPids = movement(Pids),
             NewPids2 = collision_walls(NewPids),
             Players = maps:keys(NewPids2),
             [Pid ! {player_pos, Player#player.first, Player#player.p} || Player <- maps:values(NewPids2), Pid <- Players ],
-            erlang:display("Hello"),
+            timer:send_after(?TICK, self(), update),
             loop(NewPids2);
         {Pid, pressed, K} ->
-            erlang:display("Hello1"),
             NewPlayer = pressed(Pid, Pids, K),
             NewPids = maps:update(Pid, NewPlayer, Pids),
             loop(NewPids);
         {Pid, unpressed, K} ->
-            erlang:display("Hello2"),
             NewPlayer = unpressed(Pid, Pids, K),
             NewPids = maps:update(Pid, NewPlayer, Pids),
             loop(NewPids);

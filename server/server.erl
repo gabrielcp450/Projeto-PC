@@ -115,7 +115,7 @@ user_logged_in(Sock, User) ->
 user_in_match(Sock, Match, User) ->
     receive
         {player_pos, Id, {X, Y}} ->
-            io:format("!player_pos ~p ~p ~p\n", [Id, X, Y]),
+            % io:format("!player_pos ~p ~p ~p\n", [Id, X, Y]),
             gen_tcp:send(Sock, io_lib:format("!player_pos ~p ~p ~p\n", [Id, X, Y])),
             user_in_match(Sock, Match, User);
         {finished, Result} ->
@@ -129,8 +129,7 @@ user_in_match(Sock, Match, User) ->
         {tcp,_, Data} ->
             case string:tokens(Data, " \n") of
                 ["/pressed", L] ->
-                    erlang:display("hello"),
-                    Match !{self(), pressed, L};
+                    Match ! {self(), pressed, L};
                 ["/unpressed", L] ->
                     Match ! {self(), unpressed, L};
                 _ ->
