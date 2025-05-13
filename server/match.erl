@@ -6,6 +6,8 @@
 -define(TICK, 1).
 -define(FRICTION, 20.0).
 -define(ACCELERATION, 20.0).
+-define(MODEFIERS, 100).
+-define(MAX_MODIFIERS, 2).
 
 initial_pos(I) ->
     Px = 1/2 * (I+1) - 1/4,
@@ -72,12 +74,32 @@ movement_player(Player) ->
 movement(Pids) ->
     [{Pid1, Player1}, {Pid2, Player2}] = maps:to_list(Pids),
     #{Pid1 => movement_player(Player1), Pid2 => movement_player(Player2)}.
+gen_random() ->
+    rand:uniform(99)/100.
+
+gen_modifiers(Pids,Mod) ->
+    L = [M || {M, X} <- maps:to_list(Mod), length(X) < ?MAX_MODIFIERS],
+    case L of 
+        [] ->
+            Mod;
+        _ ->
+            Nt = rand:uniform(length(L)),
+            Choosen = lists:nth(Nt, L),
+            C = {gen_random(), gen_random()},
+            [Pid ! {modifier_pos, Choosen, C} || Pid <- maps:keys(Pids)],
+            S = maps:get(Choosen, Mod),
+            maps:update(Choosen, S ++ [C], Mod)
+    end.
+
+        
 
 create(Pid1, Pid2) -> 
     Pids = #{Pid1 => initial_pos(0), Pid2 => initial_pos(1)},
-    MatchPid = spawn(fun() -> loop(Pids) end),
+    Mod = # {0 => [], 1 => [], 2 => [], 3 => []},
+    MatchPid = spawn(fun() -> loop(Pids, Mod) end),
     timer:send_after(5000000, MatchPid, finished),
     timer:send_after(?TICK, MatchPid, update),
+    timer:send_after(?MODEFIERS, MatchPid, modifiers),
     MatchPid. 
 
 pressed(Pid, Pids, K) ->
@@ -156,7 +178,7 @@ collision_walls(Pids) ->
     end.
 
 
-loop(Pids) ->
+loop(Pids, Mod) ->
     receive 
         update -> 
             NewPids = movement(Pids),
@@ -164,15 +186,19 @@ loop(Pids) ->
             Players = maps:keys(NewPids2),
             [Pid ! {player_pos, Player#player.first, Player#player.p} || Player <- maps:values(NewPids2), Pid <- Players ],
             timer:send_after(?TICK, self(), update),
-            loop(NewPids2);
+            loop(NewPids2, Mod);
+        modifiers ->
+            NewMod = gen_modifiers(Pids, Mod),
+            timer:send_after(?MODEFIERS, self(), modifiers),
+            loop(Pids, NewMod);
         {Pid, pressed, K} ->
             NewPlayer = pressed(Pid, Pids, K),
             NewPids = maps:update(Pid, NewPlayer, Pids),
-            loop(NewPids);
+            loop(NewPids, Mod);
         {Pid, unpressed, K} ->
             NewPlayer = unpressed(Pid, Pids, K),
             NewPids = maps:update(Pid, NewPlayer, Pids),
-            loop(NewPids);
+            loop(NewPids, Mod);
         finished ->
             [{Pid1, _}, {Pid2, _}] = maps:to_list(Pids),
             % continue as before
