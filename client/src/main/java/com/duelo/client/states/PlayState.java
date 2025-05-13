@@ -58,14 +58,16 @@ public class PlayState {
         updateAimDirection();
 
         // Draw game elements
-        for (Modifier mod : modifiers) {
-            mod.draw(p, playAreaX, playAreaY, playAreaSize);
-        }
-        for (Player player : players) {
-            player.draw(p, playAreaX, playAreaY, playAreaSize);
-        }
-        for (Projectile proj : projs.values()) {
-            proj.draw(p, playAreaX, playAreaY, playAreaSize);
+        synchronized (this) {
+            for (Modifier mod : modifiers) {
+                mod.draw(p, playAreaX, playAreaY, playAreaSize);
+            }
+            for (Player player : players) {
+                player.draw(p, playAreaX, playAreaY, playAreaSize);
+            }
+            for (Projectile proj : projs.values()) {
+                proj.draw(p, playAreaX, playAreaY, playAreaSize);
+            }
         }
 
         // Draw black bars
@@ -97,19 +99,19 @@ public class PlayState {
         hud.setLocalPlayerId(myPlayerId);
     }
     
-    public void onPlayerPositionChange(int id, float x, float y) {
+    synchronized public void onPlayerPositionChange(int id, float x, float y) {
         if (players[id] != null) {
             players[id].setPosition(x, y);
         }
     }
 
-    public void onPlayerAimChange(int id, float x, float y) {
+    synchronized public void onPlayerAimChange(int id, float x, float y) {
         if (players[id] != null) {
             players[id].setAim(x, y);
         }
     }
 
-    public void onProjPositionChange(int id, float x, float y) {
+    synchronized public void onProjPositionChange(int id, float x, float y) {
         if (projs.containsKey(id)) {
             projs.get(id).setPosition(x, y);
         }
@@ -118,13 +120,13 @@ public class PlayState {
         }
     }
 
-    public void onProjRemoved(int id) {
+    synchronized public void onProjRemoved(int id) {
         if (projs.containsKey(id)) {
             projs.remove(id);
         }
     }
 
-    public void onModifierCreate(int type, float x, float y) {
+    synchronized public void onModifierCreate(int type, float x, float y) {
         modifiers.add(new Modifier(type, x, y));
     }
 
