@@ -70,4 +70,8 @@ public class Player {
     public float getY() {
         return y;
     }
+
+    public int getColor() {
+        return color;
+    }
 } 

@@ -134,6 +134,9 @@ collision_walls(Pids) ->
                 k = #keys{},
                 points = Points + 2
             },
+            % Send score update to both players
+            FirstPid ! {score, FirstPlayerNew#player.points, SecondPlayerNew#player.points},
+            SecondPid ! {score, SecondPlayerNew#player.points, FirstPlayerNew#player.points},
             Pids#{FirstPid => FirstPlayerNew, SecondPid => SecondPlayerNew};
         X2 =< 0 orelse X2 >= 1 orelse Y2 =< 0 orelse Y2 >= 1 ->
             erlang:display("Player2 collision"),
@@ -150,6 +153,9 @@ collision_walls(Pids) ->
                 k = #keys{},
                 points = Points + 2
             },
+            % Send score update to both players
+            FirstPid ! {score, FirstPlayerNew#player.points, SecondPlayerNew#player.points},
+            SecondPid ! {score, SecondPlayerNew#player.points, FirstPlayerNew#player.points},
             Pids#{FirstPid => FirstPlayerNew, SecondPid => SecondPlayerNew};
         true ->
             Pids

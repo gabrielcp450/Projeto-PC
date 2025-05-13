@@ -118,6 +118,9 @@ user_in_match(Sock, Match, User) ->
             % io:format("!player_pos ~p ~p ~p\n", [Id, X, Y]),
             gen_tcp:send(Sock, io_lib:format("!player_pos ~p ~p ~p\n", [Id, X, Y])),
             user_in_match(Sock, Match, User);
+        {score, MyScore, OpponentScore} ->
+            gen_tcp:send(Sock, io_lib:format("!score ~p ~p\n", [MyScore, OpponentScore])),
+            user_in_match(Sock, Match, User);
         {finished, Result} ->
             io:format("match finished~n"),
             gen_tcp:send(Sock, io_lib:format("!finished ~p\n", [Result])),
