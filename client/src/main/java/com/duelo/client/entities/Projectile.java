@@ -5,13 +5,9 @@ import com.duelo.client.core.Game;
 import processing.core.PApplet;
 
 public class Projectile {
-    private Game game;
-    private PApplet p;
     private float x, y;
 
-    public Projectile(Game game, float x, float y) {
-        this.game = game;
-        this.p = game;
+    public Projectile(float x, float y) {
         this.x = x;
         this.y = y;
     }

@@ -1,11 +1,14 @@
 package com.duelo.client.states;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.duelo.client.core.Game;
 import com.duelo.client.entities.Player;
 import com.duelo.client.entities.Projectile;
+import com.duelo.client.entities.Modifier;
 import com.duelo.client.ui.Constants;
 import com.duelo.client.ui.HUD;
 
@@ -16,6 +19,7 @@ public class PlayState {
     private PApplet p;
     private Player[] players;
     private Map<Integer, Projectile> projs;
+    private List<Modifier> modifiers;
     private int myPlayerId;
     private boolean[] keysPressed = new boolean[256];
     private int playAreaSize;
@@ -26,8 +30,9 @@ public class PlayState {
         this.game = game;
         this.p = game;
         this.players = new Player[2];
-        this.hud = new HUD(game);
         this.projs = new HashMap<>();
+        this.modifiers = new ArrayList<>();
+        this.hud = new HUD(game);
         calculatePlayArea();
     }
 
@@ -53,6 +58,9 @@ public class PlayState {
         updateAimDirection();
 
         // Draw game elements
+        for (Modifier mod : modifiers) {
+            mod.draw(p, playAreaX, playAreaY, playAreaSize);
+        }
         for (Player player : players) {
             player.draw(p, playAreaX, playAreaY, playAreaSize);
         }
@@ -106,7 +114,7 @@ public class PlayState {
             projs.get(id).setPosition(x, y);
         }
         else {
-            projs.put(id, new Projectile(game, x, y));
+            projs.put(id, new Projectile(x, y));
         }
     }
 
@@ -114,6 +122,10 @@ public class PlayState {
         if (projs.containsKey(id)) {
             projs.remove(id);
         }
+    }
+
+    public void onModifierCreate(int type, float x, float y) {
+        modifiers.add(new Modifier(type, x, y));
     }
 
     public void keyPressed(char key, int keyCode) {

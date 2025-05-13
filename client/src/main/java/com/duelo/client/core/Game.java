@@ -224,13 +224,13 @@ public class Game extends PApplet {
                     }
                     break;
 
-                case "!modifier_pos": // Modifier position update: !modifier_pos <id> <x> <y>
+                case "!modifier_pos": // Modifier position update: !modifier_pos <type> <x> <y>
                     if (list.size() >= 4) {
-                        int modId = (Integer) list.get(1);
+                        int modType = (Integer) list.get(1);
                         float x = list.get(2) instanceof Float ? (Float) list.get(2) : ((Integer) list.get(2)).floatValue();
                         float y = list.get(3) instanceof Float ? (Float) list.get(3) : ((Integer) list.get(3)).floatValue();
-                        System.out.println("[DEBUG] Modifier position update: " + modId + " " + x + " " + y);
-                        // playState.onModifierPositionUpdate(modId, x, y);
+                        System.out.println("[DEBUG] Modifier: " + modType + " " + x + " " + y);
+                        playState.onModifierCreate(modType, x, y);
                     }
                     break;
 
