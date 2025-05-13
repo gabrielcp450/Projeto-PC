@@ -9,9 +9,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.duelo.client.entities.RankingEntry;
+import com.duelo.client.states.LoginState;
+import com.duelo.client.states.MenuState;
+import com.duelo.client.states.PlayState;
+import com.duelo.client.states.QueueState;
+import com.duelo.client.states.RankingsState;
 import com.duelo.client.ui.Constants;
 import com.duelo.client.utils.MessageParser;
-import com.duelo.client.states.*;
 
 import processing.core.PApplet;
 import processing.event.MouseEvent;
@@ -143,11 +147,12 @@ public class Game extends PApplet {
             case MENU: menuState.mousePressed(); break;
             case QUEUE: queueState.mousePressed(); break;
             case RANKINGS: rankingsState.mousePressed(); break;
+            case PLAY: playState.mousePressed(); break;
         }
     }
 
     public void sendCommand(String command) {
-        System.out.println("[CLIENT] Sending: " + command);
+        // System.out.println("[CLIENT] Sending: " + command);
         out.println(command);
     }
 
@@ -210,12 +215,47 @@ public class Game extends PApplet {
                     }
                     break;
                     
-                case "!player_pos": // Position update: !player_pos <id> <x> <y>
+                case "!player_pos": // Player position update: !player_pos <id> <x> <y>
                     if (list.size() >= 4) {
                         int playerId = (Integer) list.get(1);
-                        float x = (Float) list.get(2);
-                        float y = (Float) list.get(3);
+                        float x = list.get(2) instanceof Float ? (Float) list.get(2) : ((Integer) list.get(2)).floatValue();
+                        float y = list.get(3) instanceof Float ? (Float) list.get(3) : ((Integer) list.get(3)).floatValue();
                         playState.onPlayerPositionChange(playerId, x, y);
+                    }
+                    break;
+
+                case "!modifier_pos": // Modifier position update: !modifier_pos <id> <x> <y>
+                    if (list.size() >= 4) {
+                        int modId = (Integer) list.get(1);
+                        float x = list.get(2) instanceof Float ? (Float) list.get(2) : ((Integer) list.get(2)).floatValue();
+                        float y = list.get(3) instanceof Float ? (Float) list.get(3) : ((Integer) list.get(3)).floatValue();
+                        System.out.println("[DEBUG] Modifier position update: " + modId + " " + x + " " + y);
+                        // playState.onModifierPositionUpdate(modId, x, y);
+                    }
+                    break;
+
+                case "!player_aim": // Player aim update: !player_aim <id> <x> <y>
+                    if (list.size() >= 4) {
+                        int playerId = (Integer) list.get(1);
+                        float x = list.get(2) instanceof Float ? (Float) list.get(2) : ((Integer) list.get(2)).floatValue();
+                        float y = list.get(3) instanceof Float ? (Float) list.get(3) : ((Integer) list.get(3)).floatValue();
+                        playState.onPlayerAimChange(playerId, x, y);
+                    }
+                    break;
+
+                case "!proj_pos": // Projectile position: !proj_pos <id> <x> <y>
+                    if (list.size() >= 4) {
+                        int projId = (Integer) list.get(1);
+                        float x = list.get(2) instanceof Float ? (Float) list.get(2) : ((Integer) list.get(2)).floatValue();
+                        float y = list.get(3) instanceof Float ? (Float) list.get(3) : ((Integer) list.get(3)).floatValue();
+                        playState.onProjPositionChange(projId, x, y);
+                    }
+                    break;
+
+                case "!proj_rem": // Projectile removed: !proj_rem <id>
+                    if (list.size() >= 2) {
+                        int projId = (Integer) list.get(1);
+                        playState.onProjRemoved(projId);
                     }
                     break;
                     

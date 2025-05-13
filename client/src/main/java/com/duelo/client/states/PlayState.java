@@ -1,7 +1,11 @@
 package com.duelo.client.states;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.duelo.client.core.Game;
 import com.duelo.client.entities.Player;
+import com.duelo.client.entities.Projectile;
 import com.duelo.client.ui.Constants;
 import com.duelo.client.ui.HUD;
 
@@ -11,10 +15,11 @@ public class PlayState {
     private Game game;
     private PApplet p;
     private Player[] players;
+    private Map<Integer, Projectile> projs;
     private int myPlayerId;
     private boolean[] keysPressed = new boolean[256];
-    private float playAreaSize;
-    private float playAreaX, playAreaY;
+    private int playAreaSize;
+    private int playAreaX, playAreaY;
     private HUD hud;
     
     public PlayState(Game game) {
@@ -22,32 +27,37 @@ public class PlayState {
         this.p = game;
         this.players = new Player[2];
         this.hud = new HUD(game);
+        this.projs = new HashMap<>();
         calculatePlayArea();
     }
 
     // Calculate largest square that fits in window
     private void calculatePlayArea() {
-        float padding = 0;
-        playAreaSize = Math.min(p.width, p.height) - padding*2;
+        int padding = 0;
+        playAreaSize = (int)(Math.min(p.width, p.height) - padding*2);
         playAreaX = (p.width - playAreaSize)/2;
         playAreaY = (p.height - playAreaSize)/2;
+    }
+
+    private void updateAimDirection() {
+        // Update aim direction based on mouse position
+        // Normalize mouse position to the playArea
+        float normalizedX = (p.mouseX - playAreaX) / (float)playAreaSize;
+        float normalizedY = (p.mouseY - playAreaY) / (float)playAreaSize;
+        game.sendCommand("/aim " + normalizedX + " " + normalizedY);
     }
     
     public void draw() {
         p.background(Constants.BACKGROUND_COLOR);
 
+        updateAimDirection();
+
         // Draw game elements
         for (Player player : players) {
-            if (player != null) {
-                Player mappedPlayer = player.clone();
-
-                // Map normalized position (0-1) to play area coordinates
-                float mappedX = playAreaX + mappedPlayer.getX() * playAreaSize;
-                float mappedY = playAreaY + mappedPlayer.getY() * playAreaSize;
-
-                mappedPlayer.setPosition(mappedX, mappedY);
-                mappedPlayer.draw(p);
-            }
+            player.draw(p, playAreaX, playAreaY, playAreaSize);
+        }
+        for (Projectile proj : projs.values()) {
+            proj.draw(p, playAreaX, playAreaY, playAreaSize);
         }
 
         // Draw black bars
@@ -85,6 +95,27 @@ public class PlayState {
         }
     }
 
+    public void onPlayerAimChange(int id, float x, float y) {
+        if (players[id] != null) {
+            players[id].setAim(x, y);
+        }
+    }
+
+    public void onProjPositionChange(int id, float x, float y) {
+        if (projs.containsKey(id)) {
+            projs.get(id).setPosition(x, y);
+        }
+        else {
+            projs.put(id, new Projectile(game, x, y));
+        }
+    }
+
+    public void onProjRemoved(int id) {
+        if (projs.containsKey(id)) {
+            projs.remove(id);
+        }
+    }
+
     public void keyPressed(char key, int keyCode) {
         if (key >= 0 && key < 256 && !keysPressed[key]) {
             game.sendCommand("/pressed " + key);
@@ -108,5 +139,11 @@ public class PlayState {
         } else {
             hud.updateScores(player1Score, player0Score);
         }
+    }
+
+    public void mousePressed() {
+        float normalizedX = (p.mouseX - playAreaX) / (float)playAreaSize;
+        float normalizedY = (p.mouseY - playAreaY) / (float)playAreaSize;
+        game.sendCommand("/clicked " + normalizedX + " " + normalizedY);
     }
 }

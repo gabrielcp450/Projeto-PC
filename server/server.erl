@@ -124,6 +124,18 @@ user_in_match(Sock, Match, User) ->
         {modifier_pos, Id, {X, Y}} ->
             gen_tcp:send(Sock, io_lib:format("!modifier_pos ~p ~p ~p\n", [Id, X, Y])),
             user_in_match(Sock, Match, User);
+        {player_aim, Id, {X, Y}} ->
+            % io:format("!player_aim ~p ~p ~p\n", [Id, X, Y]),
+            gen_tcp:send(Sock, io_lib:format("!player_aim ~p ~p ~p\n", [Id, X, Y])),
+            user_in_match(Sock, Match, User);
+        {proj_pos, Id, {X, Y}} ->
+            % io:format("!player_aim ~p ~p ~p\n", [Id, X, Y]),
+            gen_tcp:send(Sock, io_lib:format("!proj_pos ~p ~p ~p\n", [Id, X, Y])),
+            user_in_match(Sock, Match, User);
+        {proj_rem, Id} ->
+            % io:format("!player_aim ~p ~p ~p\n", [Id, X, Y]),
+            gen_tcp:send(Sock, io_lib:format("!proj_rem ~p\n", [Id])),
+            user_in_match(Sock, Match, User);
         {finished, Result} ->
             io:format("match finished~n"),
             gen_tcp:send(Sock, io_lib:format("!finished ~p\n", [Result])),
@@ -138,6 +150,10 @@ user_in_match(Sock, Match, User) ->
                     Match ! {self(), pressed, L};
                 ["/unpressed", L] ->
                     Match ! {self(), unpressed, L};
+                ["/clicked", X, Y] ->
+                    Match ! {self(), clicked, X, Y};
+                ["/aim", X, Y] ->
+                    Match ! {self(), aim, X, Y};
                 _ ->
                     io:format("Received unknown command: ~p~n", [Data])
             end,

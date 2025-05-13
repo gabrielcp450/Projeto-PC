@@ -2,7 +2,8 @@
 -export([create/2]).
 
 -record(keys, {w = false, s = false, a = false, d = false}).
--record(player, {p = {0, 0}, v = {0, 0}, a = {0, 0}, points = 0, proj_v = 0, proj_i = 0, k = #keys{}, first = 0}).
+-record(player, {p = {0, 0}, v = {0, 0}, a = {0, 0}, aim = {0, 0}, points = 0, proj_v = 0, proj_i = 0, k = #keys{}, first = 0}).
+-record(proj, {p = {0, 0}, v = {0, 0}}).
 -define(TICK, 1).
 -define(FRICTION, 20.0).
 -define(ACCELERATION, 20.0).
@@ -13,11 +14,23 @@ initial_pos(I) ->
     Px = 1/2 * (I+1) - 1/4,
     #player{p = {Px, 1/2}, first = I}.
 
+subtract({X1, Y1}, {X2, Y2}) ->
+    {X1 - X2, Y1 - Y2}.
+
 normalize({X, Y}) ->
     Length = math:sqrt(X*X + Y*Y),
     case Length > 0 of
         true -> {X/Length, Y/Length};
         false -> {0, 0}
+    end.
+
+constrain(Value, Min, Max) ->
+    case Value < Min of
+        true -> Min;
+        false -> case Value > Max of
+            true -> Max;
+            false -> Value
+        end
     end.
 
 direction(Player) ->
@@ -74,6 +87,7 @@ movement_player(Player) ->
 movement(Pids) ->
     [{Pid1, Player1}, {Pid2, Player2}] = maps:to_list(Pids),
     #{Pid1 => movement_player(Player1), Pid2 => movement_player(Player2)}.
+
 gen_random() ->
     rand:uniform(99)/100.
 
@@ -91,12 +105,21 @@ gen_modifiers(Pids,Mod) ->
             maps:update(Choosen, S ++ [C], Mod)
     end.
 
-        
+proj_movement(Projs) ->
+    lists:map(fun(Proj) -> 
+        {X, Y} = Proj#proj.p,
+        {Vx, Vy} = Proj#proj.v,
+        Dt = ?TICK / 1000,
+        NewX = X + Vx * Dt,
+        NewY = Y + Vy * Dt,
+        Proj#proj{p = {NewX, NewY}}
+    end, Projs).
 
 create(Pid1, Pid2) -> 
+    Projs = [],
     Pids = #{Pid1 => initial_pos(0), Pid2 => initial_pos(1)},
     Mod = # {0 => [], 1 => [], 2 => [], 3 => []},
-    MatchPid = spawn(fun() -> loop(Pids, Mod) end),
+    MatchPid = spawn(fun() -> loop(Pids, Projs, Mod) end),
     timer:send_after(5000000, MatchPid, finished),
     timer:send_after(?TICK, MatchPid, update),
     timer:send_after(?MODEFIERS, MatchPid, modifiers),
@@ -112,8 +135,7 @@ pressed(Pid, Pids, K) ->
         "d" -> Keys#keys{d = true};
         _ -> Keys
     end,
-    NewPlayer = Player#player{k = NewKeys},
-    NewPlayer.
+    Player#player{k = NewKeys}.
 
 unpressed(Pid, Pids, K) ->
     Player = maps:get(Pid, Pids),
@@ -125,8 +147,22 @@ unpressed(Pid, Pids, K) ->
         "d" -> Keys#keys{d = false};
         _ -> Keys
         end,
-    NewPlayer = Player#player{k = NewKeys},
-    NewPlayer.
+    Player#player{k = NewKeys}.
+
+clicked(Pid, Pids, Projs, X, Y) ->
+    Player = maps:get(Pid, Pids),
+    ConstX = constrain(erlang:list_to_float(X), 0, 1),
+    ConstY = constrain(erlang:list_to_float(Y), 0, 1),
+    Aim = normalize(subtract({ConstX, ConstY}, Player#player.p)),
+    NewProj = #proj{p = Player#player.p, v = Aim},
+    {Player#player{aim = Aim}, [NewProj | Projs]}.
+
+aim(Pid, Pids, X, Y) ->
+    Player = maps:get(Pid, Pids),
+    ConstX = constrain(erlang:list_to_float(X), 0, 1),
+    ConstY = constrain(erlang:list_to_float(Y), 0, 1),
+    Aim = normalize(subtract({ConstX, ConstY}, Player#player.p)),
+    Player#player{aim = Aim}.
 
 collision_walls(Pids) ->
     [{Pid1, Player1}, {Pid2, Player2}] = maps:to_list(Pids),
@@ -183,28 +219,66 @@ collision_walls(Pids) ->
             Pids
     end.
 
+proj_collision(Pids, Projs) ->
+    [{Pid1, Player1}, {Pid2, Player2}] = maps:to_list(Pids),
 
-loop(Pids, Mod) ->
+    {FirstPlayer, FirstPid, SecondPlayer, SecondPid} = 
+        case Player1#player.first of
+            0 -> {Player1, Pid1, Player2, Pid2};
+            1 -> {Player2, Pid2, Player1, Pid1}
+        end,
+
+    {X1, Y1} = FirstPlayer#player.p,
+    {X2, Y2} = SecondPlayer#player.p,
+
+    % check collision with walls and if so, send a !proj- <id> message to all players
+    % and remove the projectile from the list
+    Projs1 = lists:filter(fun({Id, Proj}) -> 
+        {X, Y} = Proj#proj.p,
+        case X =< 0 orelse X >= 1 orelse Y =< 0 orelse Y >= 1 of
+            true -> 
+                erlang:display("Proj collision with wall"),
+                [Pid ! {proj_rem, Id} || Pid <- maps:keys(Pids)],
+                false;
+            false -> true
+        end
+    end, lists:enumerate(Projs)),
+
+    lists:map(fun({_, Proj}) -> Proj end, Projs1).
+
+loop(Pids, Projs, Mod) ->
     receive 
         update -> 
             NewPids = movement(Pids),
             NewPids2 = collision_walls(NewPids),
+            NewProjs = proj_movement(Projs),
+            NewProjs2 = proj_collision(NewPids2, NewProjs),
             Players = maps:keys(NewPids2),
-            [Pid ! {player_pos, Player#player.first, Player#player.p} || Player <- maps:values(NewPids2), Pid <- Players ],
+            [Pid ! {player_pos, Player#player.first, Player#player.p} || Player <- maps:values(NewPids2), Pid <- Players],
+            [Pid ! {player_aim, Player#player.first, Player#player.aim} || Player <- maps:values(NewPids2), Pid <- Players],
+            [Pid ! {proj_pos, Id, Proj#proj.p} || {Id, Proj} <- lists:enumerate(NewProjs2), Pid <- Players],
             timer:send_after(?TICK, self(), update),
-            loop(NewPids2, Mod);
+            loop(NewPids2, NewProjs2, Mod);
         modifiers ->
             NewMod = gen_modifiers(Pids, Mod),
             timer:send_after(?MODEFIERS, self(), modifiers),
-            loop(Pids, NewMod);
+            loop(Pids, Projs, NewMod);
         {Pid, pressed, K} ->
             NewPlayer = pressed(Pid, Pids, K),
             NewPids = maps:update(Pid, NewPlayer, Pids),
-            loop(NewPids, Mod);
+            loop(NewPids, Projs, Mod);
         {Pid, unpressed, K} ->
             NewPlayer = unpressed(Pid, Pids, K),
             NewPids = maps:update(Pid, NewPlayer, Pids),
-            loop(NewPids, Mod);
+            loop(NewPids, Projs, Mod);
+        {Pid, clicked, X, Y} ->
+            {NewPlayer, NewProjs} = clicked(Pid, Pids, Projs, X, Y),
+            NewPids = maps:update(Pid, NewPlayer, Pids),
+            loop(NewPids, NewProjs, Mod);
+        {Pid, aim, X, Y} ->
+            NewPlayer = aim(Pid, Pids, X, Y),
+            NewPids = maps:update(Pid, NewPlayer, Pids),
+            loop(NewPids, Projs, Mod);
         finished ->
             [{Pid1, _}, {Pid2, _}] = maps:to_list(Pids),
             % continue as before
@@ -219,7 +293,5 @@ loop(Pids, Mod) ->
                     {draw, draw}
             end,
             Pid1 ! {finished, Result1},
-            Pid2 ! {finished, Result2},
-            unregister(player1),
-            unregister(player2)
+            Pid2 ! {finished, Result2}
     end.
