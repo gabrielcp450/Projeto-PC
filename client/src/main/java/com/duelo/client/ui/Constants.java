@@ -8,7 +8,7 @@ public class Constants {
     public static final int ACCENT_COLOR = 0xFFC86464;
     public static final int TEXT_COLOR = 0xFF323232;
     public static final int ERROR_COLOR = 0xFFC83232;
-    
+
     public static final int BUTTON_WIDTH = 250;
     public static final int BUTTON_HEIGHT = 50;
     public static final int INPUT_WIDTH = 300;

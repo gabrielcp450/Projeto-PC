@@ -10,8 +10,9 @@ public class Button {
     private final Runnable action;
     private final PApplet p;
     private final PFont buttonFont;
-    
-    public Button(PApplet p, float x, float y, float w, float h, String label, int color, PFont buttonFont, Runnable action) {
+
+    public Button(PApplet p, float x, float y, float w, float h, String label, int color, PFont buttonFont,
+            Runnable action) {
         this.p = p;
         this.x = x;
         this.y = y;
@@ -22,7 +23,7 @@ public class Button {
         this.buttonFont = buttonFont;
         this.action = action;
     }
-    
+
     public void draw() {
         p.rectMode(PApplet.CENTER);
 
@@ -30,17 +31,16 @@ public class Button {
         p.noStroke();
         p.fill(color);
         p.rect(x, y, w, h, 5);
-        
+
         // Button text
         p.textFont(buttonFont);
         p.fill(255);
         p.textAlign(PApplet.CENTER, PApplet.CENTER);
         p.text(label, x, y);
     }
-    
+
     public boolean checkClick() {
-        if (p.mouseX > x - w/2 && p.mouseX < x + w/2 &&
-            p.mouseY > y - h/2 && p.mouseY < y + h/2) {
+        if (p.mouseX > x - w / 2 && p.mouseX < x + w / 2 && p.mouseY > y - h / 2 && p.mouseY < y + h / 2) {
             action.run();
             return true;
         }

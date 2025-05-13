@@ -4,8 +4,7 @@ import processing.core.PApplet;
 import processing.core.PFont;
 
 /**
- * Heads-Up Display (HUD) for the game.
- * Displays game information such as scores in a clean and organized way.
+ * Heads-Up Display (HUD) for the game. Displays game information such as scores in a clean and organized way.
  */
 public class HUD {
     private final PApplet p;
@@ -44,8 +43,11 @@ public class HUD {
 
     /**
      * Updates the scores displayed in the HUD
-     * @param playerScore The player's current score
-     * @param opponentScore The opponent's current score
+     *
+     * @param playerScore
+     *            The player's current score
+     * @param opponentScore
+     *            The opponent's current score
      */
     public void updateScores(int playerScore, int opponentScore) {
         System.out.println("Updating scores - Player: " + playerScore + ", Opponent: " + opponentScore);
@@ -76,9 +78,9 @@ public class HUD {
         p.rect(centerX, y, CENTER_BOX_WIDTH, BOX_HEIGHT, RADIUS);
 
         // Retângulo do player 0 (esquerda)
-        float leftX = centerX - CENTER_BOX_WIDTH/2 - BOX_WIDTH/2 + spacing;
+        float leftX = centerX - CENTER_BOX_WIDTH / 2 - BOX_WIDTH / 2 + spacing;
         // Retângulo do player 1 (direita)
-        float rightX = centerX + CENTER_BOX_WIDTH/2 + BOX_WIDTH/2 - spacing;
+        float rightX = centerX + CENTER_BOX_WIDTH / 2 + BOX_WIDTH / 2 - spacing;
 
         // Destaque do player local
         p.rectMode(PApplet.CENTER);
@@ -115,4 +117,4 @@ public class HUD {
 
         p.popStyle();
     }
-} 
+}

@@ -28,12 +28,14 @@ public class MessageParser {
         // Try Integer
         try {
             return Integer.parseInt(token);
-        } catch (NumberFormatException ignored) {}
+        } catch (NumberFormatException ignored) {
+        }
 
         // Try Float
         try {
             return Float.parseFloat(token);
-        } catch (NumberFormatException ignored) {}
+        } catch (NumberFormatException ignored) {
+        }
 
         // Return as string
         return token;

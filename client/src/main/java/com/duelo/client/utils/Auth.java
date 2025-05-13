@@ -1,6 +1,8 @@
-package com.duelo.client.core;
+package com.duelo.client.utils;
 
 import java.io.IOException;
+
+import com.duelo.client.core.Game;
 
 public class Auth {
     private final Game game;
@@ -13,11 +15,12 @@ public class Auth {
 
     public String register(String username, String password) {
         try {
-            if (!game.connect()) return "";
+            if (!game.connect())
+                return "";
 
             game.sendCommand("/c " + username + " " + password);
             String response = game.readResponse();
-            
+
             if (!response.startsWith("!")) {
                 return response;
             }
@@ -31,7 +34,8 @@ public class Auth {
 
     public String login(String username, String password) {
         try {
-            if (!game.connect()) return "";
+            if (!game.connect())
+                return "";
 
             game.sendCommand("/l " + username + " " + password);
             String response = game.readResponse();
@@ -94,6 +98,10 @@ public class Auth {
     }
 
     // Getters
-    public boolean isLoggedIn() { return isLoggedIn; }
-    public String getCurrentUser() { return currentUser; }
+    public boolean isLoggedIn() {
+        return isLoggedIn;
+    }
+    public String getCurrentUser() {
+        return currentUser;
+    }
 }

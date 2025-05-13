@@ -2,8 +2,8 @@
 -export([create/2]).
 
 -record(keys, {w = false, s = false, a = false, d = false}).
--record(player, {p = {0, 0}, v = {0, 0}, a = {0, 0}, aim = {0, 0}, points = 0, proj_v = 0, proj_i = 0, k = #keys{}, first = 0}).
--record(proj, {p = {0, 0}, v = {0, 0}}).
+-record(player, {p = {0.0, 0.0}, v = {0.0, 0.0}, a = {0.0, 0.0}, aim = {0.0, 0.0}, points = 0, proj_v = 0, proj_i = 0, k = #keys{}, first = 0}).
+-record(proj, {p = {0.0, 0.0}, v = {0.0, 0.0}}).
 -define(TICK, 1).
 -define(FRICTION, 20.0).
 -define(ACCELERATION, 20.0).

@@ -13,8 +13,16 @@ public class RankingEntry {
         this.lossStreak = lossStreak;
     }
 
-    public String getUsername() { return username; }
-    public int getLevel() { return level; }
-    public int getWinStreak() { return winStreak; }
-    public int getLossStreak() { return lossStreak; }
+    public String getUsername() {
+        return username;
+    }
+    public int getLevel() {
+        return level;
+    }
+    public int getWinStreak() {
+        return winStreak;
+    }
+    public int getLossStreak() {
+        return lossStreak;
+    }
 }

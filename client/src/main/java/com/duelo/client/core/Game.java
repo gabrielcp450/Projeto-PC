@@ -14,7 +14,7 @@ import com.duelo.client.states.MenuState;
 import com.duelo.client.states.PlayState;
 import com.duelo.client.states.QueueState;
 import com.duelo.client.states.RankingsState;
-import com.duelo.client.ui.Constants;
+import com.duelo.client.utils.Auth;
 import com.duelo.client.utils.MessageParser;
 
 import processing.core.PApplet;
@@ -26,40 +26,31 @@ public class Game extends PApplet {
 
     private static final int WINDOW_WIDTH = 900;
     private static final int WINDOW_HEIGHT = 600;
-    
-    private static Game instance;
     private Auth authManager;
     private Socket socket;
     private PrintWriter out;
     private BufferedReader in;
     private boolean isListening = false;
-    
+
     // States
-    private GameState currentState = GameState.LOGIN;
+    private State currentState;
     private MenuState menuState;
     private LoginState loginState;
     private QueueState queueState;
     private PlayState playState;
     private RankingsState rankingsState;
-    
+
     // Game data
     private List<RankingEntry> rankings = new ArrayList<>();
-    
+
     public Game() {
         this.authManager = new Auth(this);
-    }
-    
-    public static Game getInstance() {
-        if (instance == null) {
-            instance = new Game();
-        }
-        return instance;
     }
 
     public Auth getAuthManager() {
         return authManager;
     }
-    
+
     // Connection and server communication methods
     public boolean connect() {
         try {
@@ -69,7 +60,7 @@ public class Game extends PApplet {
             socket = new Socket(SERVER_HOST, SERVER_PORT);
             out = new PrintWriter(socket.getOutputStream(), true);
             in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            
+
             // Lê a mensagem de boas-vindas do servidor
             String welcomeMessage = in.readLine();
             System.out.println("Server: " + welcomeMessage);
@@ -79,76 +70,74 @@ public class Game extends PApplet {
             return false;
         }
     }
-    
+
     // State management
     public void changeState(GameState state) {
-        this.currentState = state;
+        switch (state) {
+            case MENU:
+                currentState = menuState;
+                break;
+            case PLAY:
+                currentState = playState;
+                break;
+            case LOGIN:
+                currentState = loginState;
+                break;
+            case QUEUE:
+                currentState = queueState;
+                break;
+            case RANKINGS:
+                currentState = rankingsState;
+                break;
+            case PROFILE:
+                // Not implemented
+                break;
+        }
     }
-    
+
     // Processing methods
     public void settings() {
         size(WINDOW_WIDTH, WINDOW_HEIGHT);
     }
-    
-    public void setup() {
-        if (this.args.length == 2) {
-            if (authManager.login(args[0], args[1]) == null) {
-                changeState(GameState.MENU);
-            }
-        } else {
-            System.out.println("Usage: java -jar client.jar <username> <password>");
-            exit();
-        }
 
+    public void setup() {
         menuState = new MenuState(this);
         loginState = new LoginState(this);
         queueState = new QueueState(this);
         playState = new PlayState(this);
         rankingsState = new RankingsState(this);
-    }
-    
-    public void draw() {
-        background(Constants.BACKGROUND_COLOR);
 
-        switch (currentState) {
-            case LOGIN: loginState.draw(); break;
-            case MENU: menuState.draw(); break;
-            case QUEUE: queueState.draw(); break;
-            case PLAY: playState.draw(); break;
-            case RANKINGS: rankingsState.draw(); break;
+        currentState = loginState;
+
+        if (this.args.length == 2) {
+            if (authManager.login(args[0], args[1]) == null) {
+                changeState(GameState.MENU);
+            }
         }
+    }
+
+    public void draw() {
+        currentState.draw();
     }
 
     public void keyPressed() {
-        switch (currentState) {
-            case LOGIN: loginState.keyPressed(key, keyCode); break;
-            case PLAY: playState.keyPressed(key, keyCode); break;
-        }
+        currentState.keyPressed();
     }
-    
+
     public void keyReleased() {
-        switch (currentState) {
-            case PLAY: playState.keyReleased(key, keyCode); break;
-        }
-    }
-    
-    public void keyTyped() {
+        currentState.keyReleased();
     }
 
     public void mouseWheel(MouseEvent event) {
-        switch (currentState) {
-            case RANKINGS: rankingsState.mouseWheel(event); break;
-        }
+        currentState.mouseWheel(event);
     }
 
     public void mousePressed() {
-        switch (currentState) {
-            case LOGIN: loginState.mousePressed(); break;
-            case MENU: menuState.mousePressed(); break;
-            case QUEUE: queueState.mousePressed(); break;
-            case RANKINGS: rankingsState.mousePressed(); break;
-            case PLAY: playState.mousePressed(); break;
-        }
+        currentState.mousePressed();
+    }
+
+    public void mouseMoved() {
+        currentState.mouseMoved();
     }
 
     public void sendCommand(String command) {
@@ -174,7 +163,7 @@ public class Game extends PApplet {
             out.println("/s-");
         }
     }
-    
+
     public String getUsername() {
         return authManager.getCurrentUser();
     }
@@ -200,11 +189,11 @@ public class Game extends PApplet {
     private void handleServerMessage(String message) {
         Object obj = MessageParser.parseMessage(message);
         if (obj instanceof List) {
-            List<?> list = (List<?>)obj;
-            String command = (String)list.get(0);
+            List<?> list = (List<?>) obj;
+            String command = (String) list.get(0);
 
             // System.out.println("Received " + list);
-            
+
             switch (command) {
                 case "!found": // Match found: !found <playerId> <opponentName>
                     if (list.size() >= 3) {
@@ -214,12 +203,12 @@ public class Game extends PApplet {
                         changeState(GameState.PLAY);
                     }
                     break;
-                    
+
                 case "!player_pos": // Player position update: !player_pos <id> <x> <y>
                     if (list.size() >= 4) {
                         int playerId = (Integer) list.get(1);
-                        float x = list.get(2) instanceof Float ? (Float) list.get(2) : ((Integer) list.get(2)).floatValue();
-                        float y = list.get(3) instanceof Float ? (Float) list.get(3) : ((Integer) list.get(3)).floatValue();
+                        float x = (Float) list.get(2);
+                        float y = (Float) list.get(3);
                         playState.onPlayerPositionChange(playerId, x, y);
                     }
                     break;
@@ -227,9 +216,8 @@ public class Game extends PApplet {
                 case "!modifier_pos": // Modifier position update: !modifier_pos <type> <x> <y>
                     if (list.size() >= 4) {
                         int modType = (Integer) list.get(1);
-                        float x = list.get(2) instanceof Float ? (Float) list.get(2) : ((Integer) list.get(2)).floatValue();
-                        float y = list.get(3) instanceof Float ? (Float) list.get(3) : ((Integer) list.get(3)).floatValue();
-                        System.out.println("[DEBUG] Modifier: " + modType + " " + x + " " + y);
+                        float x = (Float) list.get(2);
+                        float y = (Float) list.get(3);
                         playState.onModifierCreate(modType, x, y);
                     }
                     break;
@@ -237,8 +225,8 @@ public class Game extends PApplet {
                 case "!player_aim": // Player aim update: !player_aim <id> <x> <y>
                     if (list.size() >= 4) {
                         int playerId = (Integer) list.get(1);
-                        float x = list.get(2) instanceof Float ? (Float) list.get(2) : ((Integer) list.get(2)).floatValue();
-                        float y = list.get(3) instanceof Float ? (Float) list.get(3) : ((Integer) list.get(3)).floatValue();
+                        float x = (Float) list.get(2);
+                        float y = (Float) list.get(3);
                         playState.onPlayerAimChange(playerId, x, y);
                     }
                     break;
@@ -246,8 +234,8 @@ public class Game extends PApplet {
                 case "!proj_pos": // Projectile position: !proj_pos <id> <x> <y>
                     if (list.size() >= 4) {
                         int projId = (Integer) list.get(1);
-                        float x = list.get(2) instanceof Float ? (Float) list.get(2) : ((Integer) list.get(2)).floatValue();
-                        float y = list.get(3) instanceof Float ? (Float) list.get(3) : ((Integer) list.get(3)).floatValue();
+                        float x = (Float) list.get(2);
+                        float y = (Float) list.get(3);
                         playState.onProjPositionChange(projId, x, y);
                     }
                     break;
@@ -258,7 +246,7 @@ public class Game extends PApplet {
                         playState.onProjRemoved(projId);
                     }
                     break;
-                    
+
                 case "!score": // Score update: !score <playerScore> <opponentScore>
                     if (list.size() >= 3) {
                         int score0 = (Integer) list.get(1);
@@ -270,7 +258,7 @@ public class Game extends PApplet {
                         System.out.println("[DEBUG] Invalid score message format: " + list);
                     }
                     break;
-                    
+
                 case "!finished": // Match finished: !finished <result>
                     if (list.size() >= 2) {
                         String result = (String) list.get(1);
@@ -279,12 +267,12 @@ public class Game extends PApplet {
                         changeState(GameState.MENU);
                     }
                     break;
-                    
+
                 case "!cancelled": // Queue cancelled
                     changeState(GameState.MENU);
                     isListening = false;
                     break;
-                    
+
                 default:
                     System.err.println("Unknown server command: " + command);
             }
@@ -335,7 +323,8 @@ public class Game extends PApplet {
                         int level = Integer.parseInt(parts[1].trim());
                         int winStreak = Integer.parseInt(parts[2].trim());
                         int lossStreak = Integer.parseInt(parts[3].trim());
-                        System.out.println("[DEBUG] Parsed: " + username + " | " + level + " | " + winStreak + " | " + lossStreak);
+                        System.out.println(
+                                "[DEBUG] Parsed: " + username + " | " + level + " | " + winStreak + " | " + lossStreak);
                         rankings.add(new RankingEntry(username, level, winStreak, lossStreak));
                     } else {
                         System.out.println("[DEBUG] Entrada ignorada (partes < 4): " + entry);
