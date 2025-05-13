@@ -3,6 +3,7 @@ package com.duelo.client.states;
 import com.duelo.client.core.Game;
 import com.duelo.client.entities.Player;
 import com.duelo.client.ui.Constants;
+import com.duelo.client.ui.HUD;
 
 import processing.core.PApplet;
 
@@ -14,11 +15,13 @@ public class PlayState {
     private boolean[] keysPressed = new boolean[256];
     private float playAreaSize;
     private float playAreaX, playAreaY;
+    private HUD hud;
     
     public PlayState(Game game) {
         this.game = game;
         this.p = game;
         this.players = new Player[2];
+        this.hud = new HUD(game);
         calculatePlayArea();
     }
 
@@ -60,6 +63,9 @@ public class PlayState {
             p.rect(0, 0, p.width, playAreaY); // Top bar
             p.rect(0, playAreaY + playAreaSize, p.width, playAreaY); // Bottom bar
         }
+
+        // Draw HUD
+        hud.render();
     }
     
     public void onMatchFound(int myId, String opponent) {
@@ -68,6 +74,9 @@ public class PlayState {
         // Initialize players
         players[0] = new Player(0, 0, 0xffff0000);
         players[1] = new Player(0, 0, 0xff0000ff);
+        // Set HUD colors fixas: player 0 à esquerda, player 1 à direita
+        hud.setColors(players[0].getColor(), players[1].getColor());
+        hud.setLocalPlayerId(myPlayerId);
     }
     
     public void onPlayerPositionChange(int id, float x, float y) {
@@ -86,5 +95,18 @@ public class PlayState {
     public void keyReleased(char key, int keyCode) {
         game.sendCommand("/unpressed " + key);
         if (key >= 0 && key < 256) keysPressed[key] = false;
+    }
+
+    /**
+     * Updates the score display in the HUD
+     * @param player0Score The player's score
+     * @param player1Score The opponent's score
+     */
+    public void updateScore(int player0Score, int player1Score) {
+        if (myPlayerId == 0) {
+            hud.updateScores(player0Score, player1Score);
+        } else {
+            hud.updateScores(player1Score, player0Score);
+        }
     }
 }

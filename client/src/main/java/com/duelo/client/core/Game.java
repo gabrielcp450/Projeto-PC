@@ -219,6 +219,18 @@ public class Game extends PApplet {
                     }
                     break;
                     
+                case "!score": // Score update: !score <playerScore> <opponentScore>
+                    if (list.size() >= 3) {
+                        int score0 = (Integer) list.get(1);
+                        int score1 = (Integer) list.get(2);
+                        if (playState != null) {
+                            playState.updateScore(score0, score1);
+                        }
+                    } else {
+                        System.out.println("[DEBUG] Invalid score message format: " + list);
+                    }
+                    break;
+                    
                 case "!finished": // Match finished: !finished <result>
                     if (list.size() >= 2) {
                         String result = (String) list.get(1);
