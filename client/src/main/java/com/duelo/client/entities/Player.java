@@ -1,13 +1,13 @@
 package com.duelo.client.entities;
 
+import com.duelo.client.ui.Constants;
+
 import processing.core.PApplet;
 
 /**
  * Classe que representa um jogador no jogo.
  */
 public class Player {
-    private static final int SIZE = 40;
-
     private float x, y;
     private float aimX, aimY;
     private int color;
@@ -27,12 +27,12 @@ public class Player {
 
     public void draw(PApplet p, int playAreaX, int playAreaY, int playAreaSize) {
         // Draw player
-        p.ellipseMode(PApplet.CENTER);
+        p.ellipseMode(PApplet.RADIUS);
         p.fill(color);
         p.noStroke();
         float mappedX = playAreaX + x * playAreaSize;
         float mappedY = playAreaY + y * playAreaSize;
-        p.ellipse(mappedX, mappedY, SIZE, SIZE);
+        p.ellipse(mappedX, mappedY, Constants.PLAYER_RADIUS * playAreaSize, Constants.PLAYER_RADIUS * playAreaSize);
 
         // Draw aim direction
         float mappedAimX = playAreaX + (x + aimX * 0.05f) * playAreaSize;

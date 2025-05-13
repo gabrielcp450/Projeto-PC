@@ -50,7 +50,7 @@ public class HUD {
      *            The opponent's current score
      */
     public void updateScores(int playerScore, int opponentScore) {
-        System.out.println("Updating scores - Player: " + playerScore + ", Opponent: " + opponentScore);
+        // System.out.println("Updating scores - Player: " + playerScore + ", Opponent: " + opponentScore);
         this.playerScore = playerScore;
         this.opponentScore = opponentScore;
     }

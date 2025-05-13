@@ -41,6 +41,12 @@ public class PlayState extends State {
     public void draw() {
         game.background(Constants.BACKGROUND_COLOR);
 
+        // Update aim direction based on mouse position
+        // Normalize mouse position to the playArea
+        float normalizedX = (game.mouseX - playAreaX) / (float) playAreaSize;
+        float normalizedY = (game.mouseY - playAreaY) / (float) playAreaSize;
+        game.sendCommand("/aim " + normalizedX + " " + normalizedY);
+
         // Draw game elements
         synchronized (this) {
             modifiers.forEach(mod -> mod.draw(game, playAreaX, playAreaY, playAreaSize));
@@ -89,15 +95,6 @@ public class PlayState extends State {
         float normalizedX = (game.mouseX - playAreaX) / (float) playAreaSize;
         float normalizedY = (game.mouseY - playAreaY) / (float) playAreaSize;
         game.sendCommand("/clicked " + normalizedX + " " + normalizedY);
-    }
-
-    @Override
-    public void mouseMoved() {
-        // Update aim direction based on mouse position
-        // Normalize mouse position to the playArea
-        float normalizedX = (game.mouseX - playAreaX) / (float) playAreaSize;
-        float normalizedY = (game.mouseY - playAreaY) / (float) playAreaSize;
-        game.sendCommand("/aim " + normalizedX + " " + normalizedY);
     }
 
     public void onMatchFound(int myId, String opponent) {

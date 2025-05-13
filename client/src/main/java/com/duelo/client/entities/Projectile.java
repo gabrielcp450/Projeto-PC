@@ -1,6 +1,6 @@
 package com.duelo.client.entities;
 
-import com.duelo.client.core.Game;
+import com.duelo.client.ui.Constants;
 
 import processing.core.PApplet;
 
@@ -27,11 +27,12 @@ public class Projectile {
 
     public void draw(PApplet p, int playAreaX, int playAreaY, int playAreaSize) {
         // Draw projectile
-        p.ellipseMode(PApplet.CENTER);
+        p.ellipseMode(PApplet.RADIUS);
         p.fill(255, 0, 0);
         p.noStroke();
         float mappedX = playAreaX + x * playAreaSize;
         float mappedY = playAreaY + y * playAreaSize;
-        p.ellipse(mappedX, mappedY, 10, 10); // Size of the projectile
+        p.ellipse(mappedX, mappedY, Constants.PROJECTILE_RADIUS * playAreaSize,
+                Constants.PROJECTILE_RADIUS * playAreaSize); // Size of the projectile
     }
 }
