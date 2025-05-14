@@ -4,3 +4,6 @@ server:
 
 client:
 	nc -N localhost 12345
+
+clean:
+	rm *.beam
