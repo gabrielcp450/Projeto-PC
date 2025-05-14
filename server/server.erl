@@ -121,7 +121,10 @@ user_in_match(Sock, Match, User) ->
         {score, MyScore, OpponentScore} ->
             gen_tcp:send(Sock, io_lib:format("!score ~p ~p\n", [MyScore, OpponentScore])),
             user_in_match(Sock, Match, User);
-        {modifier_pos, Id, {X, Y}} ->
+        {modifier_pos, Id,Type, {X, Y}} ->
+            gen_tcp:send(Sock, io_lib:format("!modifier_pos ~p ~p ~p ~p\n", [Id, Type,X, Y])),
+            user_in_match(Sock, Match, User);
+        {modifier_rem, Id, {X, Y}} ->
             gen_tcp:send(Sock, io_lib:format("!modifier_pos ~p ~p ~p\n", [Id, X, Y])),
             user_in_match(Sock, Match, User);
         {player_aim, Id, {X, Y}} ->

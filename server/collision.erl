@@ -1,7 +1,8 @@
 -module(collision).
 -export([
     player_collision/1,
-    proj_collision/2
+    proj_collision/2,
+    mod_collision/2
 ]).
 -import(match, [
     initial_pos/1
@@ -101,3 +102,64 @@ proj_collision(Pids, Projs) ->
     end, lists:enumerate(RemainingProjs)),
 
     {NewPids, [Proj || {_, Proj} <- FinalProjs]}.
+buff_player(Player, Id) ->
+    case Id of 
+        0 -> Player#player{proj_v = ?PROJECTILE_VELOCITY_MAX};
+        1 -> Player#player{proj_v = ?PROJECTILE_VELOCITY_MIN};
+        2 -> Player#player{proj_v = ?PROJECTILE_INTERVAL_MIN};
+        3 -> Player#player{proj_v = ?PROJECTILE_INTERVAL_MAX};
+        _ -> Player
+    end.
+handle_player_buff(FP, FPid, SP, SPid, BuffPlayer, Id) ->
+    {FPNew, SPNew} = case  BuffPlayer of
+        first ->
+            {buff_player(FP, Id), SP};
+        second ->
+            {FP, buff_player(SP, Id)}
+    end,
+    #{FPid => FPNew, SPid => SPNew}.
+
+unfold_mod(Mod) ->
+    [{Type, {Id, Pos}} || {Type, L} <- maps:to_list(Mod), {Id,Pos} <- L].
+
+check_modifier_hit_players(Mod, FP, FPid, SP, SPid) ->
+    lists:foldl(fun({Type, {Id, Pos}}, {PidsAcc, ToRemove}) ->
+        case collides_sphere_to_sphere(Pos, ?MODIFIER_RADIUS, FP#player.p, ?PLAYER_RADIUS) of
+            true ->
+                UpdatedPids = handle_player_buff(FP, FPid, SP, SPid, first, Type),
+                {maps:merge(PidsAcc, UpdatedPids), [{Type, {Id,Pos}} | ToRemove]};
+            false ->
+                case collides_sphere_to_sphere(Pos, ?MODIFIER_RADIUS, SP#player.p, ?PLAYER_RADIUS) of
+                true ->
+                    UpdatedPids = handle_player_buff(FP, FPid, SP, SPid, second, Type),
+                    {maps:merge(PidsAcc, UpdatedPids), [{Type, {Id,Pos}} | ToRemove]};
+                false ->
+                    {PidsAcc, ToRemove}
+                end 
+            end 
+        end, ({#{FPid => FP, SPid => SP}, []}), unfold_mod(Mod)).
+
+remove_mod(Mod, ToRemove) ->
+    lists:foldl(
+        fun({Id, Element}, AccMap) ->
+            maps:update_with(Id,
+                fun(List) -> lists:filter(fun(E) -> E =/= Element end, List) end,
+                AccMap
+            )
+        end,
+        Mod,
+        ToRemove 
+    ).
+
+mod_collision(Pids, Mod) ->
+
+    {FP, FPid, SP, SPid} = get_players(Pids),
+
+    {NewPids, ToRemove} = check_modifier_hit_players(Mod, FP, FPid, SP, SPid),
+
+    [Pid ! {modifier_rem, {Id, {Type,Pos}} } || Pid <- maps:keys(Pids), {Type, Id, Pos }<- ToRemove],
+
+    NewMod = remove_mod(Mod, ToRemove),
+
+    {NewPids, NewMod}.
+

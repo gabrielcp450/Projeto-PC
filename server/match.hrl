@@ -30,6 +30,12 @@
 -define(FRICTION, 20.0).
 -define(ACCELERATION, 20.0).
 -define(MODIFIERS, 100).             %% milliseconds between modifiers
+-define(BUFF, 100).                  %% millisenconds to each tick to buff
 -define(MAX_MODIFIERS, 2).           %% max per modifier type
 -define(PLAYER_RADIUS, 0.025).
+-define(MODIFIER_RADIUS, 0.015).
 -define(PROJECTILE_RADIUS, 0.005).
+-define(PROJECTILE_VELOCITY_MAX, 2).
+-define(PROJECTILE_VELOCITY_MIN, 0.25).
+-define(PROJECTILE_INTERVAL_MAX, 2).
+-define(PROJECTILE_INTERVAL_MIN, 0.25).
