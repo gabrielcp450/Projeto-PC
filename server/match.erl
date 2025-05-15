@@ -36,11 +36,9 @@ create(Pid1, Pid2) ->
     timer:send_after(10*1000, MatchPid, finished),
     timer:send_after(?TICK, MatchPid, update),
     timer:send_after(?MODIFIERS_INTERVAL, MatchPid, modifiers),
-    MatchPid. 
+    MatchPid.
 
 player_shoot_limited(Player, Pid, Counter) ->
-    erlang:display("clicked"),
-    erlang:display(Player#player.reloading),
     case Player#player.reloading of
         false ->
             NewPlayer = Player#player{reloading = true},

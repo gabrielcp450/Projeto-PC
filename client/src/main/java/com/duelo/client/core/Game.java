@@ -276,8 +276,8 @@ public class Game extends PApplet {
                 case "!finished": // Match finished: !finished <result>
                     if (list.size() >= 2) {
                         Integer result = (Integer) list.get(1);
-                        // playState.onMatchFinished(result);
                         isListening = false;
+                        playState.onMatchFinished();
                         resultState.setResult(result);
                         changeState(GameState.RESULT);
                     }

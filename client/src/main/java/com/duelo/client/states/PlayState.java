@@ -111,6 +111,19 @@ public class PlayState extends State {
         hud.setLocalPlayerId(myPlayerId);
     }
 
+    public void onMatchFinished() {
+        // reset everything
+        for (int i = 0; i < players.length; i++) {
+            players[i] = null;
+        }
+        projs.clear();
+        modifiers.clear();
+        hud.reset();
+        for (int i = 0; i < keysPressed.length; i++) {
+            keysPressed[i] = false;
+        }
+    }
+
     synchronized public void onPlayerPositionChange(int id, float x, float y) {
         if (players[id] != null) {
             players[id].setPosition(x, y);
