@@ -2,7 +2,9 @@
 -export([
     player_collision/1,
     proj_collision/2,
-    mod_collision/2
+    mod_collision/2,
+    collides_sphere_to_sphere/4,
+    collides_sphere_to_wall/2
 ]).
 -import(match, [
     initial_pos/1
