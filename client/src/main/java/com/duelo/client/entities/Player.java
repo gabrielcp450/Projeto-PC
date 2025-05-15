@@ -41,6 +41,8 @@ public class Player {
         p.strokeWeight(2);
         float mappedAimX = playAreaX + (x + aimX * 0.05f) * playAreaSize;
         float mappedAimY = playAreaY + (y + aimY * 0.05f) * playAreaSize;
+        p.stroke(1);
+        p.strokeWeight(2.5f);
         p.line(mappedX, mappedY, mappedAimX, mappedAimY);
 
         // Draw name box
@@ -55,6 +57,7 @@ public class Player {
                                                                                                                        // corners
         p.fill(255); // White text
         p.text(name, mappedX, mappedY - Constants.PLAYER_RADIUS * playAreaSize - boxHeight / 2 - 5);
+        p.strokeWeight(1);
     }
 
     public void setPosition(float x, float y) {
