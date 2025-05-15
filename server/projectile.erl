@@ -1,6 +1,6 @@
 -module(projectile).
 -export([
-    shoot/4,
+    shoot/2,
     aim/3
 ]).
 -import(utils, [
@@ -13,12 +13,11 @@
 
 -include("match.hrl").
 
-shoot(Player, Projs, X, Y) ->
-    ConstX = constrain(erlang:list_to_float(X), 0, 1),
-    ConstY = constrain(erlang:list_to_float(Y), 0, 1),
-    Aim = normalize(sub({ConstX, ConstY}, Player#player.p)),
-    NewProj = #proj{p = add(Player#player.p, mul(Aim, 0.05)), v = Aim},
-    {Player#player{aim = Aim}, [NewProj | Projs]}.
+shoot(Player, Counter) ->
+    Projs = Player#player.projs,
+    Aim = Player#player.aim,
+    NewProjs = Projs#{Counter => #proj{p = add(Player#player.p, mul(Aim, 0.05)), v = mul(Aim, Player#player.proj_v)}},
+    {Player#player{projs = NewProjs, aim = Aim}, Counter+1}.
 
 aim(Player, X, Y) ->
     ConstX = constrain(erlang:list_to_float(X), 0, 1),

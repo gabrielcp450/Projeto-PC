@@ -63,6 +63,11 @@ public class HUD {
         return opponentScore;
     }
 
+    public void reset() {
+        this.playerScore = 0;
+        this.opponentScore = 0;
+    }
+
     /**
      * Renders the HUD with current scores
      */

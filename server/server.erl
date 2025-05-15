@@ -86,10 +86,7 @@ user_logged_in(Sock, User) ->
                 ["/s-"] ->
                     matchmaker:cancel(User);
                 ["/t"] ->
-                    Top10 = stats:top10(),
-                    io:format("Top10: ~p~n", [Top10]),
-                    Str = io_lib:format("Top10: ~p~n", [Top10]),
-                    gen_tcp:send(Sock, lists:flatten(Str)),
+                    gen_tcp:send(Sock, io_lib:format("!rankings ~w\n", [stats:top10()])),
                     user_logged_in(Sock, User);
                 _ -> gen_tcp:send(Sock, "invalid message\n")
             end;
@@ -143,10 +140,11 @@ user_in_match(Sock, Match, User) ->
         {finished, Result} ->
             io:format("match finished~n"),
             gen_tcp:send(Sock, io_lib:format("!finished ~p\n", [Result])),
-            % case Result of
-            %     win -> stats:add_win(User);
-            %     loss -> stats:add_loss(User)
-            % end,
+             case Result of
+                 1 -> stats:add_win(User);
+                 -1 -> stats:add_loss(User);
+                 0 -> false
+             end,
             user_logged_in(Sock, User);
         {tcp,_, Data} ->
             case string:tokens(Data, " \n") of
@@ -158,6 +156,8 @@ user_in_match(Sock, Match, User) ->
                     Match ! {self(), clicked, X, Y};
                 ["/aim", X, Y] ->
                     Match ! {self(), aim, X, Y};
+                ["/t"] ->
+                    gen_tcp:send(Sock, io_lib:format("!rankings ~w\n", [stats:top10()]));
                 _ ->
                     io:format("Received unknown command: ~p~n", [Data])
             end,

@@ -4,7 +4,9 @@
     proj_movement/1
 ]).
 -import(utils, [
-    normalize/1
+    normalize/1,
+    add/2,
+    mul/2
 ]).
 
 -include("match.hrl").
@@ -60,15 +62,14 @@ move_player(Player) ->
 
     Player#player{p = {NewPx, NewPy}, v = {NewVx, NewVy}, a = {0, 0}}.
 
-proj_movement(Projs) ->
-    lists:map(fun(Proj) -> 
-        {X, Y} = Proj#proj.p,
-        {Vx, Vy} = Proj#proj.v,
-        Dt = ?TICK / 1000,
-        NewX = X + Vx * Dt,
-        NewY = Y + Vy * Dt,
-        Proj#proj{p = {NewX, NewY}}
-    end, Projs).
+move_projectile(Proj) ->
+    Dt = ?TICK / 1000,
+    Proj#proj{p = add(Proj#proj.p, mul(Proj#proj.v, Dt))}.
+
+proj_movement(Pids) ->
+    maps:map(fun(_, Player) ->
+        Player#player{projs = maps:map(fun(_, Proj) -> move_projectile(Proj) end, Player#player.projs)}
+    end, Pids).
 
 player_movement(Pids) ->
     [{Pid1, Player1}, {Pid2, Player2}] = maps:to_list(Pids),
