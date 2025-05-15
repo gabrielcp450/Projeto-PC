@@ -18,7 +18,8 @@
     unpressed/2
 ]).
 -import(modifiers, [
-    gen_modifiers/3
+    gen_modifiers/3,
+    tick_buff_pids/1
 ]).
 
 -include("match.hrl").
@@ -40,8 +41,9 @@ create(Pid1, Pid2) ->
 loop(Pids, Projs, Mod, Counter) ->
     receive 
         update -> 
-            NewPids = player_movement(Pids),
-            NewPids2 = player_collision(NewPids),
+            NewPids = tick_buff_pids(Pids),
+            NewPids1 = player_movement(NewPids),
+            NewPids2 = player_collision(NewPids1),
             NewProjs = proj_movement(Projs),
             {NewPids3, NewProjs2} = proj_collision(NewPids2, NewProjs),
             {NewPids4, NewMod} = mod_collision(NewPids3, Mod),
@@ -72,10 +74,10 @@ loop(Pids, Projs, Mod, Counter) ->
             NewPids = maps:update(Pid, NewPlayer, Pids),
             loop(NewPids, Projs, Mod, Counter);
         finished ->
-            [{Pid1, _}, {Pid2, _}] = maps:to_list(Pids),
-            % continue as before
-            Points1 = 2,
-            Points2 = 4,
+            [{Pid1, Player1}, {Pid2, Player2}] = maps:to_list(Pids),
+
+            Points1 = Player1#player.points,
+            Points2 = Player2#player.points,
             {Result1, Result2} = if 
                 Points1 < Points2 -> 
                     {loss, win};

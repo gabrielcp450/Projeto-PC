@@ -1,11 +1,13 @@
 -module(modifiers).
 -export([
-    gen_modifiers/3
+    gen_modifiers/3,
+    tick_buff_pids/1
 ]).
 
 -import(collision,[
     collides_sphere_to_wall/2,
-    collides_sphere_to_sphere/4
+    collides_sphere_to_sphere/4,
+    get_players/1
 ]).
 -include("match.hrl").
 gen_random(L) ->
@@ -35,3 +37,32 @@ gen_modifiers(Pids,Mod, Counter) ->
             S = maps:get(Type, Mod),
             {maps:update(Type, S ++ [{Counter,P}], Mod), Counter + 1}
     end.
+
+tick_buff(Player) ->
+    Proj_v = Player#player.proj_v,
+    Proj_i = Player#player.proj_i,
+    NewProj_v = 
+        if 
+            Proj_v < ?PROJECTILE_VELOCITY_INITIAL->
+                Proj_v + ?TICK_BUFF;
+            Proj_v > ?PROJECTILE_VELOCITY_INITIAL ->
+                Proj_v - ?TICK_BUFF;
+            true ->
+                Proj_v
+        end,
+    NewProj_i = 
+        if Proj_i < ?PROJECTILE_INTERVAL_INITIAL->
+                Proj_i + ?TICK_BUFF;
+            Proj_i > ?PROJECTILE_INTERVAL_INITIAL->
+                Proj_i - ?TICK_BUFF;
+            true ->
+                Proj_i
+        end,
+    Player#player{proj_v = NewProj_v, proj_i = NewProj_i}.
+
+tick_buff_pids(Pids) ->
+    {FP, FPid, SP, SPid} = get_players(Pids),
+
+    NewFP = tick_buff(FP),
+    NewSP = tick_buff(SP),
+    #{FPid => NewFP,SPid => NewSP}.

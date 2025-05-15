@@ -4,7 +4,8 @@
     proj_collision/2,
     mod_collision/2,
     collides_sphere_to_sphere/4,
-    collides_sphere_to_wall/2
+    collides_sphere_to_wall/2,
+    get_players/1
 ]).
 -import(match, [
     initial_pos/1

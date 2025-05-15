@@ -143,10 +143,10 @@ user_in_match(Sock, Match, User) ->
         {finished, Result} ->
             io:format("match finished~n"),
             gen_tcp:send(Sock, io_lib:format("!finished ~p\n", [Result])),
-            % case Result of
-            %     win -> stats:add_win(User);
-            %     loss -> stats:add_loss(User)
-            % end,
+             case Result of
+                 win -> stats:add_win(User);
+                 loss -> stats:add_loss(User)
+             end,
             user_logged_in(Sock, User);
         {tcp,_, Data} ->
             case string:tokens(Data, " \n") of
