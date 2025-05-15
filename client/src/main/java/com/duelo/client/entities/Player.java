@@ -11,13 +11,15 @@ public class Player {
     private float x, y;
     private float aimX, aimY;
     private int color;
+    private String name;
 
-    public Player(float x, float y, int color) {
+    public Player(String name, float x, float y, int color) {
         this.x = x;
         this.y = y;
         this.aimX = x;
         this.aimY = y;
         this.color = color;
+        this.name = name;
     }
 
     public void setAim(float aimX, float aimY) {
@@ -35,10 +37,24 @@ public class Player {
         p.ellipse(mappedX, mappedY, Constants.PLAYER_RADIUS * playAreaSize, Constants.PLAYER_RADIUS * playAreaSize);
 
         // Draw aim direction
+        p.stroke(50);
+        p.strokeWeight(2);
         float mappedAimX = playAreaX + (x + aimX * 0.05f) * playAreaSize;
         float mappedAimY = playAreaY + (y + aimY * 0.05f) * playAreaSize;
-        p.stroke(1);
         p.line(mappedX, mappedY, mappedAimX, mappedAimY);
+
+        // Draw name box
+        p.textAlign(PApplet.CENTER, PApplet.CENTER);
+        p.textSize(12);
+        p.fill(128, 128, 128, 150); // Gray with transparency
+        p.noStroke();
+        float boxWidth = p.textWidth(name) + 10; // Add padding
+        float boxHeight = 20;
+        p.rectMode(PApplet.CENTER);
+        p.rect(mappedX, mappedY - Constants.PLAYER_RADIUS * playAreaSize - boxHeight / 2 - 5, boxWidth, boxHeight, 5); // Rounded
+                                                                                                                       // corners
+        p.fill(255); // White text
+        p.text(name, mappedX, mappedY - Constants.PLAYER_RADIUS * playAreaSize - boxHeight / 2 - 5);
     }
 
     public void setPosition(float x, float y) {

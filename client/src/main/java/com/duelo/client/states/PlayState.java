@@ -105,8 +105,11 @@ public class PlayState extends State {
     public void onMatchFound(int myId, String opponent) {
         this.myPlayerId = myId;
 
-        players[0] = new Player(0, 0, 0xffff0000);
-        players[1] = new Player(0, 0, 0xff0000ff);
+        String player0Name = myId == 0 ? "You" : opponent;
+        String player1Name = myId == 1 ? "You" : opponent;
+
+        players[0] = new Player(player0Name, 0, 0, 0xffff0000);
+        players[1] = new Player(player1Name, 0, 0, 0xff0000ff);
         hud.setColors(players[0].getColor(), players[1].getColor());
         hud.setLocalPlayerId(myPlayerId);
     }
