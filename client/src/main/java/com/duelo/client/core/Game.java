@@ -14,6 +14,7 @@ import com.duelo.client.states.MenuState;
 import com.duelo.client.states.PlayState;
 import com.duelo.client.states.QueueState;
 import com.duelo.client.states.RankingsState;
+import com.duelo.client.states.ResultState;
 import com.duelo.client.utils.Auth;
 import com.duelo.client.utils.MessageParser;
 
@@ -39,6 +40,7 @@ public class Game extends PApplet {
     private QueueState queueState;
     private PlayState playState;
     private RankingsState rankingsState;
+    private ResultState resultState;
 
     // Game data
     private List<RankingEntry> rankings = new ArrayList<>();
@@ -92,6 +94,9 @@ public class Game extends PApplet {
             case PROFILE:
                 // Not implemented
                 break;
+            case RESULT:
+                currentState = resultState;
+                break;
         }
     }
 
@@ -106,6 +111,7 @@ public class Game extends PApplet {
         queueState = new QueueState(this);
         playState = new PlayState(this);
         rankingsState = new RankingsState(this);
+        resultState = new ResultState(this);
 
         currentState = loginState;
 
@@ -269,10 +275,11 @@ public class Game extends PApplet {
 
                 case "!finished": // Match finished: !finished <result>
                     if (list.size() >= 2) {
-                        String result = (String) list.get(1);
+                        Integer result = (Integer) list.get(1);
                         // playState.onMatchFinished(result);
                         isListening = false;
-                        changeState(GameState.MENU);
+                        resultState.setResult(result);
+                        changeState(GameState.RESULT);
                     }
                     break;
 

@@ -33,7 +33,7 @@ create(Pid1, Pid2) ->
     Pids = #{Pid1 => initial_pos(0), Pid2 => initial_pos(1)},
     Mod = # {0 => [], 1 => [], 2 => [], 3 => []},
     MatchPid = spawn(fun() -> loop(Pids, Mod, 0) end),
-    timer:send_after(5000000, MatchPid, finished),
+    timer:send_after(10*1000, MatchPid, finished),
     timer:send_after(?TICK, MatchPid, update),
     timer:send_after(?MODIFIERS_INTERVAL, MatchPid, modifiers),
     MatchPid. 
@@ -98,11 +98,11 @@ loop(Pids, Mod, Counter) ->
             Points2 = Player2#player.points,
             {Result1, Result2} = if 
                 Points1 < Points2 -> 
-                    {loss, win};
+                    {-1, 1};
                 Points1 > Points2 ->
-                    {win, loss};
+                    {1, -1};
                 true ->
-                    {draw, draw}
+                    {0, 0}
             end,
             Pid1 ! {finished, Result1},
             Pid2 ! {finished, Result2}
