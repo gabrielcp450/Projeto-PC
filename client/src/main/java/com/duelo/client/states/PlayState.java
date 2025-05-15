@@ -62,19 +62,26 @@ public class PlayState extends State {
             projs.values().forEach(proj -> proj.draw(game, playAreaX, playAreaY, playAreaSize));
         }
 
-        // Draw black bars
+        // Draw áreas não jogáveis (laterais) com cor aesthetic
         game.rectMode(PApplet.CORNER);
-        game.fill(0);
+        game.noStroke();
+        game.fill(60, 62, 90); // azul arroxeado aesthetic
         if (playAreaX > 0) {
-            // Vertical bars
-            game.rect(0, 0, playAreaX, game.height); // Left bar
-            game.rect(playAreaX + playAreaSize, 0, playAreaX, game.height); // Right bar
+            game.rect(0, 0, playAreaX, game.height); // Esquerda
+            game.rect(playAreaX + playAreaSize, 0, playAreaX, game.height); // Direita
         }
         if (playAreaY > 0) {
-            // Horizontal bars
-            game.rect(0, 0, game.width, playAreaY); // Top bar
-            game.rect(0, playAreaY + playAreaSize, game.width, playAreaY); // Bottom bar
+            game.fill(60, 62, 90);
+            game.rect(0, 0, game.width, playAreaY); // Topo
+            game.rect(0, playAreaY + playAreaSize, game.width, playAreaY); // Baixo
         }
+
+        // Linha vermelha grossa (zona proibida)
+        game.stroke(220, 40, 40); // vermelho forte
+        game.strokeWeight(8);
+        game.line(playAreaX, 0, playAreaX, game.height); // Esquerda
+        game.line(playAreaX + playAreaSize, 0, playAreaX + playAreaSize, game.height); // Direita
+        game.noStroke();
 
         // Draw HUD
         hud.render();

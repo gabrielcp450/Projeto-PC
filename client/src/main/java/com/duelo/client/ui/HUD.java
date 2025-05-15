@@ -71,24 +71,12 @@ public class HUD {
         p.textFont(font);
         p.textAlign(p.CENTER, p.CENTER);
 
-        float centerX = p.width / 2f;
+        float leftX = PADDING + BOX_WIDTH / 2f;
+        float rightX = p.width - PADDING - BOX_WIDTH / 2f;
         float y = PADDING + BOX_HEIGHT / 2f;
-        float spacing = 6;
 
-        int blackTrans = p.color(0, 0, 0, 180);
         int white = p.color(255);
         int highlight = p.color(255, 214, 0); // Amarelo vibrante
-
-        // Retângulo central (placar)
-        p.noStroke();
-        p.fill(blackTrans);
-        p.rectMode(PApplet.CENTER);
-        p.rect(centerX, y, CENTER_BOX_WIDTH, BOX_HEIGHT, RADIUS);
-
-        // Retângulo do player 0 (esquerda)
-        float leftX = centerX - CENTER_BOX_WIDTH / 2 - BOX_WIDTH / 2 + spacing;
-        // Retângulo do player 1 (direita)
-        float rightX = centerX + CENTER_BOX_WIDTH / 2 + BOX_WIDTH / 2 - spacing;
 
         // Destaque do player local
         p.rectMode(PApplet.CENTER);
@@ -104,11 +92,11 @@ public class HUD {
             p.rect(rightX, y, BOX_WIDTH, BOX_HEIGHT, RADIUS);
         }
 
-        // Retângulo do player 0
+        // Retângulo do player 0 (esquerda)
         p.noStroke();
         p.fill(playerColor);
         p.rect(leftX, y, BOX_WIDTH, BOX_HEIGHT, RADIUS);
-        // Retângulo do player 1
+        // Retângulo do player 1 (direita)
         p.fill(opponentColor);
         p.rect(rightX, y, BOX_WIDTH, BOX_HEIGHT, RADIUS);
 
@@ -118,10 +106,6 @@ public class HUD {
         p.textAlign(p.CENTER, p.CENTER);
         p.text(playerScore, leftX, y);
         p.text(opponentScore, rightX, y);
-
-        // Placar central (só score, mas pode ser timer futuramente)
-        String scoreText = String.format("-");
-        p.text(scoreText, centerX, y);
 
         p.popStyle();
     }

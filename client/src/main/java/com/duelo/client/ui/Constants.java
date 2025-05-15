@@ -15,7 +15,7 @@ public class Constants {
     public static final int INPUT_HEIGHT = 40;
     public static final int PADDING = 20;
 
-    public static final float PLAYER_RADIUS = 0.025f;
+    public static final float PLAYER_RADIUS = 0.03f;
     public static final float PROJECTILE_RADIUS = 0.005f;
     public static final float MODIFIER_RADIUS = 0.015f;
 }

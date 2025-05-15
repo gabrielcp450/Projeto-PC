@@ -38,7 +38,9 @@ public class Player {
         float mappedAimX = playAreaX + (x + aimX * 0.05f) * playAreaSize;
         float mappedAimY = playAreaY + (y + aimY * 0.05f) * playAreaSize;
         p.stroke(1);
+        p.strokeWeight(2.5f);
         p.line(mappedX, mappedY, mappedAimX, mappedAimY);
+        p.strokeWeight(1);
     }
 
     public void setPosition(float x, float y) {

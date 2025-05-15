@@ -61,12 +61,12 @@ public class RankingsState extends State {
         game.text("Rankings", game.width / 2, 60);
 
         // Table parameters
-        int tableWidth = 700;
+        int tableWidth = 740;
         int colRank = game.width / 2 - tableWidth / 2 + 40;
         int colPlayer = colRank + 80;
         int colLevel = colPlayer + 220;
         int colWin = colLevel + 100;
-        int colLoss = colWin + 100;
+        int colLoss = colWin + 130;
         int rowStart = 130;
         int rowHeight = 48;
         int headerHeight = 54;
@@ -152,14 +152,19 @@ public class RankingsState extends State {
 
         // Scroll bar (if needed)
         if (rankingMaxScroll > 0) {
+            float scrollbarWidth = 8;
+            float scrollbarRadius = 8;
+            float scrollbarX = game.width / 2 + tableWidth / 2 - scrollbarWidth / 2 - 8;
             float scrollbarHeight = (visibleRows * rowHeight) * (visibleRows / (float) totalRows);
             float scrollbarY = PApplet.map(rankingScrollY, 0, rankingMaxScroll, usersAreaTop,
                     usersAreaBottom - scrollbarHeight);
 
-            game.fill(200, 200, 200, 150);
-            game.rect(game.width / 2 + tableWidth / 2 - 15, usersAreaTop, 8, usersAreaBottom - usersAreaTop, 4);
-            game.fill(150, 150, 150, 200);
-            game.rect(game.width / 2 + tableWidth / 2 - 15, scrollbarY, 8, scrollbarHeight, 4);
+            // Barra de fundo
+            game.fill(220, 220, 220, 120);
+            game.rect(scrollbarX, usersAreaTop + (usersAreaBottom - usersAreaTop) / 2, scrollbarWidth, usersAreaBottom - usersAreaTop, scrollbarRadius);
+            // Barra de scroll
+            game.fill(120, 120, 120, 180);
+            game.rect(scrollbarX, scrollbarY + scrollbarHeight / 2, scrollbarWidth, scrollbarHeight, scrollbarRadius);
         }
 
         // Draw buttons (back button)
