@@ -11,7 +11,7 @@
     get_players/1
 ]).
 -import(projectile, [
-    shoot/4,
+    shoot/2,
     aim/3
 ]).
 -import(keys, [
@@ -35,8 +35,19 @@ create(Pid1, Pid2) ->
     MatchPid = spawn(fun() -> loop(Pids, Mod, 0) end),
     timer:send_after(5000000, MatchPid, finished),
     timer:send_after(?TICK, MatchPid, update),
-    timer:send_after(?MODIFIERS, MatchPid, modifiers),
+    timer:send_after(?MODIFIERS_INTERVAL, MatchPid, modifiers),
     MatchPid. 
+
+player_shoot_limited(Player, Pid, Counter) ->
+    erlang:display("clicked"),
+    erlang:display(Player#player.reloading),
+    case Player#player.reloading of
+        false ->
+            NewPlayer = Player#player{reloading = true},
+            timer:send_after(round(NewPlayer#player.proj_i * 1000), self(), {reloaded, Pid}),
+            shoot(NewPlayer, Counter);
+        true -> {Player, Counter}
+    end.
 
 loop(Pids, Mod, Counter) ->
     receive 
@@ -56,8 +67,13 @@ loop(Pids, Mod, Counter) ->
             loop(NewPids5, NewMod, Counter);
         modifiers ->
             {NewMod, NewCounter} = gen_modifiers(Pids, Mod, Counter),
-            timer:send_after(?MODIFIERS, self(), modifiers),
+            timer:send_after(?MODIFIERS_INTERVAL, self(), modifiers),
             loop(Pids, NewMod, NewCounter);
+        {reloaded, Pid} ->
+            Player = maps:get(Pid, Pids),
+            NewPlayer = Player#player{reloading = false},
+            NewPids = maps:update(Pid, NewPlayer, Pids),
+            loop(NewPids, Mod, Counter);
         {Pid, pressed, K} ->
             NewPlayer = pressed(maps:get(Pid, Pids), K),
             NewPids = maps:update(Pid, NewPlayer, Pids),
@@ -67,8 +83,9 @@ loop(Pids, Mod, Counter) ->
             NewPids = maps:update(Pid, NewPlayer, Pids),
             loop(NewPids, Mod, Counter);
         {Pid, clicked, X, Y} ->
-            {NewPlayer, NewCounter} = shoot(maps:get(Pid, Pids), Counter, X, Y),
-            NewPids = maps:update(Pid, NewPlayer, Pids),
+            NewPlayer = aim(maps:get(Pid, Pids), X, Y),
+            {NewPlayer2, NewCounter} = player_shoot_limited(NewPlayer, Pid, Counter),
+            NewPids = maps:update(Pid, NewPlayer2, Pids),
             loop(NewPids, Mod, NewCounter);
         {Pid, aim, X, Y} ->
             NewPlayer = aim(maps:get(Pid, Pids), X, Y),

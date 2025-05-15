@@ -43,20 +43,20 @@ tick_buff(Player) ->
     Proj_v = Player#player.proj_v,
     Proj_i = Player#player.proj_i,
     NewProj_v = 
-        if 
-            Proj_v < ?PROJECTILE_VELOCITY_INITIAL - Epsilon ->
-                Proj_v + ?TICK_BUFF;
+        if Proj_v < ?PROJECTILE_VELOCITY_INITIAL - Epsilon ->
+                Proj_v + ?VELOCITY_TICK_BUFF;
             Proj_v > ?PROJECTILE_VELOCITY_INITIAL + Epsilon ->
-                Proj_v - ?TICK_BUFF;
+                Proj_v - ?VELOCITY_TICK_BUFF;
             true -> ?PROJECTILE_VELOCITY_INITIAL
         end,
     NewProj_i = 
         if Proj_i < ?PROJECTILE_INTERVAL_INITIAL - Epsilon ->
-                Proj_i + ?TICK_BUFF;
+                Proj_i + ?INTERVAL_TICK_BUFF;
             Proj_i > ?PROJECTILE_INTERVAL_INITIAL + Epsilon ->
-                Proj_i - ?TICK_BUFF;
+                Proj_i - ?INTERVAL_TICK_BUFF;
             true -> ?PROJECTILE_INTERVAL_INITIAL
         end,
+
     Player#player{proj_v = NewProj_v, proj_i = NewProj_i}.
 
 tick_buff_pids(Pids) ->
