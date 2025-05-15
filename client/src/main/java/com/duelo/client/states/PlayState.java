@@ -225,7 +225,7 @@ public class PlayState extends State {
         int tableY = 140;
         int headerHeight = 52;
         int rowHeight = 44;
-        int visibleRows = 10;
+        int visibleRows = 7;
 
         // Column positions
         int colRank = tableX + 20;
