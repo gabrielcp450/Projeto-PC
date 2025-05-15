@@ -10,6 +10,13 @@ public class MessageParser {
         }
 
         List<Object> parsed = new ArrayList<>();
+
+        if (message.startsWith("!rankings")) {
+            parsed.add("!rankings");
+            parsed.add(message.substring(10));
+            return parsed;
+        }
+
         String[] tokens = message.trim().split("\\s+");
 
         if (tokens.length == 0) {

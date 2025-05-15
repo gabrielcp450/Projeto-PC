@@ -1,6 +1,8 @@
 package com.duelo.client.states;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import com.duelo.client.core.Game;
@@ -8,11 +10,14 @@ import com.duelo.client.core.State;
 import com.duelo.client.entities.Modifier;
 import com.duelo.client.entities.Player;
 import com.duelo.client.entities.Projectile;
+import com.duelo.client.entities.RankingEntry;
 import com.duelo.client.ui.Constants;
 import com.duelo.client.ui.HUD;
 
 import processing.core.PApplet;
-import processing.sound.*;
+import processing.core.PFont;
+import processing.sound.Sound;
+import processing.sound.SoundFile;
 
 public class PlayState extends State {
     private final Player[] players = new Player[2];
@@ -22,9 +27,12 @@ public class PlayState extends State {
     private final boolean[] keysPressed = new boolean[256];
     private final SoundFile projHitSound;
     private final SoundFile wallHitSound;
+    private final PFont inputFont, buttonFont;
 
     private int playAreaSize, playAreaX, playAreaY;
     private int myPlayerId;
+    private boolean scoreTableVisible = false;
+    private List<RankingEntry> rankings = new ArrayList<RankingEntry>();
 
     public PlayState(Game game) {
         super(game);
@@ -33,6 +41,9 @@ public class PlayState extends State {
         this.wallHitSound = new SoundFile(game, "assets/wall_hit.mp3");
         Sound.volume(0.5f);
         calculatePlayArea();
+
+        this.inputFont = game.createFont("Arial", 16);
+        this.buttonFont = game.createFont("Arial-Bold", 20);
     }
 
     private void calculatePlayArea() {
@@ -78,11 +89,17 @@ public class PlayState extends State {
 
         // Draw HUD
         hud.render();
+
+        if (scoreTableVisible) {
+            drawScoreTable();
+        }
     }
 
     @Override
     public void keyPressed() {
-        if (game.key >= 0 && game.key < 256 && !keysPressed[game.key]) {
+        if (game.keyCode == PApplet.TAB) {
+            game.sendCommand("/t");
+        } else if (game.key >= 0 && game.key < 256 && !keysPressed[game.key]) {
             game.sendCommand("/pressed " + game.key);
             keysPressed[game.key] = true;
         }
@@ -90,9 +107,12 @@ public class PlayState extends State {
 
     @Override
     public void keyReleased() {
-        game.sendCommand("/unpressed " + game.key);
-        if (game.key >= 0 && game.key < 256)
+        if (game.keyCode == PApplet.TAB) {
+            scoreTableVisible = false;
+        } else if (game.key >= 0 && game.key < 256) {
+            game.sendCommand("/unpressed " + game.key);
             keysPressed[game.key] = false;
+        }
     }
 
     @Override
@@ -161,6 +181,11 @@ public class PlayState extends State {
         modifiers.remove(id);
     }
 
+    public void showRankings(List<RankingEntry> rankings) {
+        this.rankings = rankings;
+        scoreTableVisible = true;
+    }
+
     public void updateScore(int score0, int score1) {
         int prevScore0, prevScore1;
         if (myPlayerId == 0) {
@@ -173,10 +198,87 @@ public class PlayState extends State {
             hud.updateScores(score1, score0);
         }
 
-        // if (score0 == prevScore0 + 2 || score1 == prevScore1 + 2) {
-        // wallHitSound.play();
-        // } else {
-        // projHitSound.play();
-        // }
+        if (score0 == prevScore0 + 2 || score1 == prevScore1 + 2) {
+            wallHitSound.play();
+        } else {
+            projHitSound.play();
+        }
+    }
+
+    public void drawScoreTable() {
+        // Semi-transparent grey overlay
+        game.fill(50, 50, 50, 180); // dark grey with alpha
+        game.noStroke();
+        game.rectMode(PApplet.CORNER);
+        game.rect(80, 80, game.width - 160, game.height - 160, 20);
+
+        // Table layout
+        int tableWidth = game.width - 200;
+        int tableX = 100;
+        int tableY = 140;
+        int headerHeight = 52;
+        int rowHeight = 44;
+        int visibleRows = 10;
+
+        // Column positions
+        int colRank = tableX + 20;
+        int colPlayer = colRank + 80;
+        int colLevel = colPlayer + 220;
+        int colWin = colLevel + 100;
+        int colLoss = colWin + 100;
+
+        // Header background
+        game.fill(100, 100, 100, 220); // darker semi-transparent
+        game.noStroke();
+        game.rect(tableX, tableY, tableWidth, headerHeight, 12);
+
+        // Header text
+        game.textFont(buttonFont);
+        game.fill(255);
+        game.textAlign(PApplet.LEFT, PApplet.CENTER);
+        int headerY = tableY + headerHeight / 2;
+        game.text("Rank", colRank, headerY);
+        game.text("Player", colPlayer, headerY);
+        game.text("Level", colLevel, headerY);
+        game.text("Win Streak", colWin, headerY);
+        game.text("Loss Streak", colLoss, headerY);
+
+        // Body rows
+        game.textFont(inputFont);
+        int rowY = tableY + headerHeight;
+
+        for (int i = 0; i < PApplet.min(visibleRows, rankings.size()); i++) {
+            int currentY = rowY + i * rowHeight + rowHeight / 2;
+
+            // Row background
+            if (i % 2 == 0)
+                game.fill(255, 255, 255, 80);
+            else
+                game.fill(220, 220, 220, 80);
+
+            game.noStroke();
+            game.rect(tableX, rowY + i * rowHeight, tableWidth, rowHeight, 10);
+
+            // Highlight top 3
+            if (i == 0)
+                game.fill(255, 215, 0);
+            else if (i == 1)
+                game.fill(192, 192, 192);
+            else if (i == 2)
+                game.fill(205, 127, 50);
+            else
+                game.fill(255);
+
+            game.textAlign(PApplet.LEFT, PApplet.CENTER);
+            game.text((i + 1) + ".", colRank, currentY);
+
+            // Player data
+            game.fill(255);
+            RankingEntry entry = rankings.get(i);
+            game.text(entry.getUsername(), colPlayer, currentY);
+            game.text(String.valueOf(entry.getLevel()), colLevel, currentY);
+            game.text(String.valueOf(entry.getWinStreak()), colWin, currentY);
+            game.text(String.valueOf(entry.getLossStreak()), colLoss, currentY);
+        }
     }
 }

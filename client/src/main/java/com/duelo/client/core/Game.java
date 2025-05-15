@@ -42,9 +42,6 @@ public class Game extends PApplet {
     private RankingsState rankingsState;
     private ResultState resultState;
 
-    // Game data
-    private List<RankingEntry> rankings = new ArrayList<>();
-
     public Game() {
         this.authManager = new Auth(this);
     }
@@ -273,6 +270,14 @@ public class Game extends PApplet {
                     }
                     break;
 
+                case "!rankings": // In-game rankings update: !rankings [rankingData]
+                    if (list.size() >= 2) {
+                        String rankingsData = (String) list.get(1);
+                        System.out.println("[DEBUG] Rankings data: " + rankingsData);
+                        playState.showRankings(serializeRankingEntries(rankingsData));
+                    }
+                    break;
+
                 case "!finished": // Match finished: !finished <result>
                     if (list.size() >= 2) {
                         Integer result = (Integer) list.get(1);
@@ -297,7 +302,7 @@ public class Game extends PApplet {
     public List<RankingEntry> getRankings() {
         if (!connect()) {
             System.out.println("[DEBUG] Não foi possível conectar ao servidor.");
-            return rankings;
+            return null;
         }
 
         try {
@@ -308,9 +313,9 @@ public class Game extends PApplet {
             boolean started = false;
             while ((response = in.readLine()) != null) {
                 System.out.println("[DEBUG] Linha recebida: " + response);
-                if (response.contains("Top10:")) {
+                if (response.contains("!rankings")) {
                     started = true;
-                    response = response.substring(response.indexOf("Top10:") + 6).trim();
+                    response = response.substring(10);
                 }
                 if (started) {
                     sb.append(response);
@@ -320,37 +325,112 @@ public class Game extends PApplet {
                 }
             }
             String fullResponse = sb.toString();
-            System.out.println("[DEBUG] Resposta completa: " + fullResponse);
 
-            if (!fullResponse.isEmpty() && fullResponse.startsWith("[")) {
-                rankings.clear();
-                // Remove [ e ]
-                fullResponse = fullResponse.substring(1, fullResponse.length() - 1);
-                System.out.println("[DEBUG] Resposta após remover colchetes: " + fullResponse);
-                // Separa cada entrada do ranking
-                String[] entries = fullResponse.split("\\},\\s*\\{");
-                for (String entry : entries) {
-                    entry = entry.replaceAll("[\\{\\}\"]", ""); // remove {, }, "
-                    System.out.println("[DEBUG] Entrada bruta: " + entry);
-                    String[] parts = entry.split(",");
-                    if (parts.length >= 4) {
-                        String username = parts[0].trim();
-                        int level = Integer.parseInt(parts[1].trim());
-                        int winStreak = Integer.parseInt(parts[2].trim());
-                        int lossStreak = Integer.parseInt(parts[3].trim());
+            return serializeRankingEntries(fullResponse);
+        } catch (IOException e) {
+            System.out.println("[DEBUG] Erro ao ler resposta do servidor: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Serializes ranking entries from Erlang's format to Java objects Handles the format:
+     * [{[97,115,100],1,0,0},{[97,115,100,97,115,100],1,0,0},...] where usernames are lists of ASCII values
+     */
+    public List<RankingEntry> serializeRankingEntries(String fullResponse) {
+        System.out.println("[DEBUG] Resposta completa: " + fullResponse);
+        List<RankingEntry> rankings = new ArrayList<>();
+
+        if (fullResponse == null || fullResponse.isEmpty()) {
+            System.out.println("[DEBUG] Resposta vazia ou nula.");
+            return rankings;
+        }
+
+        // Ensure it's a properly formatted list
+        if (fullResponse.startsWith("[") && fullResponse.endsWith("]")) {
+            // Remove the outer brackets
+            String content = fullResponse.substring(1, fullResponse.length() - 1);
+
+            // Split by "},{" which separates entries
+            String[] entries = content.split("\\},\\{");
+
+            for (String entry : entries) {
+                // Clean up the entry - remove surrounding braces if present
+                entry = entry.trim();
+                if (entry.startsWith("{")) {
+                    entry = entry.substring(1);
+                }
+                if (entry.endsWith("}")) {
+                    entry = entry.substring(0, entry.length() - 1);
+                }
+
+                System.out.println("[DEBUG] Processing entry: " + entry);
+
+                // Find the username part which is in format [97,115,100]
+                int usernameEnd = entry.indexOf("],");
+                if (usernameEnd == -1) {
+                    System.out.println("[DEBUG] Invalid entry format, username ending not found: " + entry);
+                    continue;
+                }
+
+                // Extract username ASCII array
+                String usernameAscii = entry.substring(0, usernameEnd + 1);
+                if (!usernameAscii.startsWith("[") || !usernameAscii.endsWith("]")) {
+                    System.out.println("[DEBUG] Invalid username format: " + usernameAscii);
+                    continue;
+                }
+
+                // Convert ASCII array to string
+                String username = convertAsciiArrayToString(usernameAscii);
+
+                // Get the rest of the data
+                String restOfData = entry.substring(usernameEnd + 2); // +2 to skip the "],
+                String[] dataParts = restOfData.split(",");
+
+                if (dataParts.length >= 3) {
+                    try {
+                        int level = Integer.parseInt(dataParts[0].trim());
+                        int winStreak = Integer.parseInt(dataParts[1].trim());
+                        int lossStreak = Integer.parseInt(dataParts[2].trim());
+
                         System.out.println(
                                 "[DEBUG] Parsed: " + username + " | " + level + " | " + winStreak + " | " + lossStreak);
                         rankings.add(new RankingEntry(username, level, winStreak, lossStreak));
-                    } else {
-                        System.out.println("[DEBUG] Entrada ignorada (partes < 4): " + entry);
+                    } catch (NumberFormatException e) {
+                        System.out.println("[DEBUG] Failed to parse numeric values: " + restOfData);
                     }
+                } else {
+                    System.out.println("[DEBUG] Not enough data parts: " + restOfData);
                 }
-            } else {
-                System.out.println("[DEBUG] Resposta inesperada ou nula do servidor.");
             }
-        } catch (IOException | NumberFormatException e) {
-            e.printStackTrace();
+        } else {
+            System.out.println("[DEBUG] Resposta não está no formato de lista esperado.");
         }
+
         return rankings;
+    }
+
+    /**
+     * Converts an Erlang-style ASCII array "[97,115,100]" to a Java String
+     */
+    private String convertAsciiArrayToString(String asciiArray) {
+        // Remove brackets
+        String numbers = asciiArray.substring(1, asciiArray.length() - 1);
+
+        // Split by comma
+        String[] asciiValues = numbers.split(",");
+
+        // Convert to char array
+        StringBuilder sb = new StringBuilder();
+        for (String asciiValue : asciiValues) {
+            try {
+                int value = Integer.parseInt(asciiValue.trim());
+                sb.append((char) value);
+            } catch (NumberFormatException e) {
+                System.out.println("[DEBUG] Failed to parse ASCII value: " + asciiValue);
+            }
+        }
+
+        return sb.toString();
     }
 }

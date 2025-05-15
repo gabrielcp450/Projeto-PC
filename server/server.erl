@@ -86,10 +86,7 @@ user_logged_in(Sock, User) ->
                 ["/s-"] ->
                     matchmaker:cancel(User);
                 ["/t"] ->
-                    Top10 = stats:top10(),
-                    io:format("Top10: ~p~n", [Top10]),
-                    Str = io_lib:format("Top10: ~p~n", [Top10]),
-                    gen_tcp:send(Sock, lists:flatten(Str)),
+                    gen_tcp:send(Sock, io_lib:format("!rankings ~w\n", [stats:top10()])),
                     user_logged_in(Sock, User);
                 _ -> gen_tcp:send(Sock, "invalid message\n")
             end;
@@ -159,6 +156,8 @@ user_in_match(Sock, Match, User) ->
                     Match ! {self(), clicked, X, Y};
                 ["/aim", X, Y] ->
                     Match ! {self(), aim, X, Y};
+                ["/t"] ->
+                    gen_tcp:send(Sock, io_lib:format("!rankings ~w\n", [stats:top10()]));
                 _ ->
                     io:format("Received unknown command: ~p~n", [Data])
             end,
