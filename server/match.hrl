@@ -14,7 +14,7 @@
 -define(PROJECTILE_INTERVAL_MAX, 2).
 -define(PROJECTILE_INTERVAL_MIN, 0.25).
 -define(PROJECTILE_INTERVAL_INITIAL, 1).
--define(TICK_BUFF, 0.25).
+-define(TICK_BUFF, 0.0001).
 %% Player movement keys
 -record(keys, {
     w = false,
@@ -30,6 +30,7 @@
     a       = {0.0, 0.0},    %% acceleration
     aim     = {0.0, 0.0},    %% aiming direction
     points  = 0,             %% score
+    projs   = #{},           %% projectiles
     proj_v  = ?PROJECTILE_VELOCITY_INITIAL,             %% projectile velocity
     proj_i  = ?PROJECTILE_INTERVAL_INITIAL,             %% projectile interval
     k       = #keys{},       %% current keys pressed

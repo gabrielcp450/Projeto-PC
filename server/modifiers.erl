@@ -39,24 +39,23 @@ gen_modifiers(Pids,Mod, Counter) ->
     end.
 
 tick_buff(Player) ->
+    Epsilon = 0.00001,
     Proj_v = Player#player.proj_v,
     Proj_i = Player#player.proj_i,
     NewProj_v = 
         if 
-            Proj_v < ?PROJECTILE_VELOCITY_INITIAL->
+            Proj_v < ?PROJECTILE_VELOCITY_INITIAL - Epsilon ->
                 Proj_v + ?TICK_BUFF;
-            Proj_v > ?PROJECTILE_VELOCITY_INITIAL ->
+            Proj_v > ?PROJECTILE_VELOCITY_INITIAL + Epsilon ->
                 Proj_v - ?TICK_BUFF;
-            true ->
-                Proj_v
+            true -> ?PROJECTILE_VELOCITY_INITIAL
         end,
     NewProj_i = 
-        if Proj_i < ?PROJECTILE_INTERVAL_INITIAL->
+        if Proj_i < ?PROJECTILE_INTERVAL_INITIAL - Epsilon ->
                 Proj_i + ?TICK_BUFF;
-            Proj_i > ?PROJECTILE_INTERVAL_INITIAL->
+            Proj_i > ?PROJECTILE_INTERVAL_INITIAL + Epsilon ->
                 Proj_i - ?TICK_BUFF;
-            true ->
-                Proj_i
+            true -> ?PROJECTILE_INTERVAL_INITIAL
         end,
     Player#player{proj_v = NewProj_v, proj_i = NewProj_i}.
 

@@ -157,10 +157,10 @@ public class PlayState extends State {
             hud.updateScores(score1, score0);
         }
 
-        if (score0 == prevScore0 + 2 || score1 == prevScore1 + 2) {
-            wallHitSound.play();
-        } else {
-            projHitSound.play();
-        }
+        // if (score0 == prevScore0 + 2 || score1 == prevScore1 + 2) {
+        // wallHitSound.play();
+        // } else {
+        // projHitSound.play();
+        // }
     }
 }

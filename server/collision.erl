@@ -1,7 +1,7 @@
 -module(collision).
 -export([
     player_collision/1,
-    proj_collision/2,
+    proj_collision/1,
     mod_collision/2,
     collides_sphere_to_sphere/4,
     collides_sphere_to_wall/2,
@@ -82,18 +82,22 @@ player_collision(Pids) ->
             end
     end.
 
-proj_collision(Pids, Projs) ->
+proj_collision(Pids) ->
     {FP, FPid, SP, SPid} = get_players(Pids),
 
+    Projs = maps:merge(FP#player.projs, SP#player.projs),
     {NewPids, HitIds} = check_proj_hit_players(Projs, FP, FPid, SP, SPid),
 
     % Notify clients about removed projectiles
     [Pid ! {proj_rem, Id} || Pid <- maps:keys(Pids), Id <- HitIds],
 
-    % Remove hit projectiles
-    RemainingProjs = maps:filter(fun(Id, _) -> not lists:member(Id, HitIds) end, Projs),
+    % Filter out projectiles that hit players
+    {NewFP, FPid, NewSP, SPid} = get_players(NewPids),
+    NewFP2 = NewFP#player{projs = maps:without(HitIds, NewFP#player.projs)},
+    NewSP2 = NewSP#player{projs = maps:without(HitIds, NewSP#player.projs)},
 
     % Then check for wall collisions
+    RemainingProjs = maps:merge(NewFP2#player.projs, NewSP2#player.projs),
     FinalProjs = maps:filter(fun(Id, Proj) ->
         {X, Y} = Proj#proj.p,
         case collides_sphere_to_wall({X, Y}, ?PROJECTILE_RADIUS) of
@@ -104,14 +108,18 @@ proj_collision(Pids, Projs) ->
         end
     end, RemainingProjs),
 
-    {NewPids, FinalProjs}.
+    % Filter out projectiles that hit walls
+    NewFP3 = NewFP2#player{projs = maps:with(maps:keys(FinalProjs), NewFP2#player.projs)},
+    NewSP3 = NewSP2#player{projs = maps:with(maps:keys(FinalProjs), NewSP2#player.projs)},
+    
+    #{FPid => NewFP3, SPid => NewSP3}.
 
 buff_player(Player, Id) ->
     case Id of 
         0 -> Player#player{proj_v = ?PROJECTILE_VELOCITY_MAX};
         1 -> Player#player{proj_v = ?PROJECTILE_VELOCITY_MIN};
-        2 -> Player#player{proj_v = ?PROJECTILE_INTERVAL_MIN};
-        3 -> Player#player{proj_v = ?PROJECTILE_INTERVAL_MAX};
+        2 -> Player#player{proj_i = ?PROJECTILE_INTERVAL_MIN};
+        3 -> Player#player{proj_i = ?PROJECTILE_INTERVAL_MAX};
         _ -> Player
     end.
 
