@@ -54,7 +54,7 @@ get_players(Pids) ->
     end.
 
 check_proj_hit_players(Projs, FP, FPid, SP, SPid) ->
-    lists:foldl(fun({Id, Proj}, {PidsAcc, ToRemove}) ->
+    maps:fold(fun(Id, Proj, {PidsAcc, ToRemove}) ->
         {X, Y} = Proj#proj.p,
         case collides_sphere_to_sphere({X, Y}, ?PROJECTILE_RADIUS, FP#player.p, ?PLAYER_RADIUS) of
             true ->
@@ -69,7 +69,7 @@ check_proj_hit_players(Projs, FP, FPid, SP, SPid) ->
                         {PidsAcc, ToRemove}
                 end
         end
-    end, ({#{FPid => FP, SPid => SP}, []}), lists:enumerate(Projs)).
+    end, ({#{FPid => FP, SPid => SP}, []}), Projs).
 
 player_collision(Pids) ->
     {FP, FPid, SP, SPid} = get_players(Pids),
@@ -91,10 +91,10 @@ proj_collision(Pids, Projs) ->
     [Pid ! {proj_rem, Id} || Pid <- maps:keys(Pids), Id <- HitIds],
 
     % Remove hit projectiles
-    RemainingProjs = [Proj || {Id, Proj} <- lists:enumerate(Projs), not lists:member(Id, HitIds)],
+    RemainingProjs = maps:filter(fun(Id, _) -> not lists:member(Id, HitIds) end, Projs),
 
     % Then check for wall collisions
-    FinalProjs = lists:filter(fun({Id, Proj}) ->
+    FinalProjs = maps:filter(fun(Id, Proj) ->
         {X, Y} = Proj#proj.p,
         case collides_sphere_to_wall({X, Y}, ?PROJECTILE_RADIUS) of
             true ->
@@ -102,9 +102,10 @@ proj_collision(Pids, Projs) ->
                 false;
             false -> true
         end
-    end, lists:enumerate(RemainingProjs)),
+    end, RemainingProjs),
 
-    {NewPids, [Proj || {_, Proj} <- FinalProjs]}.
+    {NewPids, FinalProjs}.
+
 buff_player(Player, Id) ->
     case Id of 
         0 -> Player#player{proj_v = ?PROJECTILE_VELOCITY_MAX};
@@ -113,6 +114,7 @@ buff_player(Player, Id) ->
         3 -> Player#player{proj_v = ?PROJECTILE_INTERVAL_MAX};
         _ -> Player
     end.
+
 handle_player_buff(FP, FPid, SP, SPid, BuffPlayer, Id) ->
     {FPNew, SPNew} = case  BuffPlayer of
         first ->

@@ -61,7 +61,7 @@ move_player(Player) ->
     Player#player{p = {NewPx, NewPy}, v = {NewVx, NewVy}, a = {0, 0}}.
 
 proj_movement(Projs) ->
-    lists:map(fun(Proj) -> 
+    maps:map(fun(_, Proj) -> 
         {X, Y} = Proj#proj.p,
         {Vx, Vy} = Proj#proj.v,
         Dt = ?TICK / 1000,

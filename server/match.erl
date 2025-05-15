@@ -10,7 +10,7 @@
     mod_collision/2
 ]).
 -import(projectile, [
-    shoot/4,
+    shoot/5,
     aim/3
 ]).
 -import(keys, [
@@ -29,7 +29,7 @@ initial_pos(I) ->
     #player{p = {Px, 1/2}, id = I}.
 
 create(Pid1, Pid2) -> 
-    Projs = [],
+    Projs = #{},
     Pids = #{Pid1 => initial_pos(0), Pid2 => initial_pos(1)},
     Mod = # {0 => [], 1 => [], 2 => [], 3 => []},
     MatchPid = spawn(fun() -> loop(Pids, Projs, Mod, 0) end),
@@ -50,7 +50,7 @@ loop(Pids, Projs, Mod, Counter) ->
             Players = maps:keys(NewPids4),
             [Pid ! {player_pos, Player#player.id, Player#player.p} || Player <- maps:values(NewPids4), Pid <- Players],
             [Pid ! {player_aim, Player#player.id, Player#player.aim} || Player <- maps:values(NewPids4), Pid <- Players],
-            [Pid ! {proj_pos, Id, Proj#proj.p} || {Id, Proj} <- lists:enumerate(NewProjs2), Pid <- Players],
+            [Pid ! {proj_pos, Id, Proj#proj.p} || {Id, Proj} <- maps:to_list(NewProjs2), Pid <- Players],
             timer:send_after(?TICK, self(), update),
             loop(NewPids4, NewProjs2, NewMod, Counter);
         modifiers ->
@@ -66,9 +66,10 @@ loop(Pids, Projs, Mod, Counter) ->
             NewPids = maps:update(Pid, NewPlayer, Pids),
             loop(NewPids, Projs, Mod, Counter);
         {Pid, clicked, X, Y} ->
-            {NewPlayer, NewProjs} = shoot(maps:get(Pid, Pids), Projs, X, Y),
+            erlang:display("shooting"),
+            {NewPlayer, NewProjs, NewCounter} = shoot(maps:get(Pid, Pids), Projs, Counter, X, Y),
             NewPids = maps:update(Pid, NewPlayer, Pids),
-            loop(NewPids, NewProjs, Mod, Counter);
+            loop(NewPids, NewProjs, Mod, NewCounter);
         {Pid, aim, X, Y} ->
             NewPlayer = aim(maps:get(Pid, Pids), X, Y),
             NewPids = maps:update(Pid, NewPlayer, Pids),
