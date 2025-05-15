@@ -17,4 +17,5 @@ public class Constants {
 
     public static final float PLAYER_RADIUS = 0.025f;
     public static final float PROJECTILE_RADIUS = 0.005f;
+    public static final float MODIFIER_RADIUS = 0.015f;
 }

@@ -1,5 +1,8 @@
 package com.duelo.client.states;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import com.duelo.client.core.Game;
 import com.duelo.client.core.State;
 import com.duelo.client.entities.Modifier;
@@ -8,25 +11,27 @@ import com.duelo.client.entities.Projectile;
 import com.duelo.client.ui.Constants;
 import com.duelo.client.ui.HUD;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import processing.core.PApplet;
+import processing.sound.*;
 
 public class PlayState extends State {
     private final Player[] players = new Player[2];
     private final Map<Integer, Projectile> projs = new HashMap<>();
-    private final List<Modifier> modifiers = new ArrayList<>();
+    private final Map<Integer, Modifier> modifiers = new HashMap<>();
     private final HUD hud;
     private final boolean[] keysPressed = new boolean[256];
+    private final SoundFile projHitSound;
+    private final SoundFile wallHitSound;
+
     private int playAreaSize, playAreaX, playAreaY;
     private int myPlayerId;
 
     public PlayState(Game game) {
         super(game);
         this.hud = new HUD(game);
+        this.projHitSound = new SoundFile(game, "assets/proj_hit.mp3");
+        this.wallHitSound = new SoundFile(game, "assets/wall_hit.mp3");
+        Sound.volume(0.5f);
         calculatePlayArea();
     }
 
@@ -49,7 +54,7 @@ public class PlayState extends State {
 
         // Draw game elements
         synchronized (this) {
-            modifiers.forEach(mod -> mod.draw(game, playAreaX, playAreaY, playAreaSize));
+            modifiers.values().forEach(mod -> mod.draw(game, playAreaX, playAreaY, playAreaSize));
             for (Player player : players) {
                 if (player != null)
                     player.draw(game, playAreaX, playAreaY, playAreaSize);
@@ -130,15 +135,32 @@ public class PlayState extends State {
         projs.remove(id);
     }
 
-    synchronized public void onModifierCreate(int type, float x, float y) {
-        modifiers.add(new Modifier(type, x, y));
+    synchronized public void onModifierCreate(int id, int type, float x, float y) {
+        if (!modifiers.containsKey(id)) {
+            modifiers.put(id, new Modifier(type, x, y));
+        }
     }
 
-    public void updateScore(int player0Score, int player1Score) {
+    synchronized public void onModifierRemove(int id) {
+        modifiers.remove(id);
+    }
+
+    public void updateScore(int score0, int score1) {
+        int prevScore0, prevScore1;
         if (myPlayerId == 0) {
-            hud.updateScores(player0Score, player1Score);
+            prevScore0 = hud.getPlayerScore();
+            prevScore1 = hud.getOpponentScore();
+            hud.updateScores(score0, score1);
         } else {
-            hud.updateScores(player1Score, player0Score);
+            prevScore0 = hud.getOpponentScore();
+            prevScore1 = hud.getPlayerScore();
+            hud.updateScores(score1, score0);
+        }
+
+        if (score0 == prevScore0 + 2 || score1 == prevScore1 + 2) {
+            wallHitSound.play();
+        } else {
+            projHitSound.play();
         }
     }
 }

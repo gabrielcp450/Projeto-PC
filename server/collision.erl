@@ -157,7 +157,7 @@ mod_collision(Pids, Mod) ->
 
     {NewPids, ToRemove} = check_modifier_hit_players(Mod, FP, FPid, SP, SPid),
 
-    [Pid ! {modifier_rem, {Id, {Type,Pos}} } || Pid <- maps:keys(Pids), {Type, Id, Pos }<- ToRemove],
+    [Pid ! {modifier_rem, Id} || Pid <- maps:keys(Pids), {_, {Id, _}} <- ToRemove],
 
     NewMod = remove_mod(Mod, ToRemove),
 

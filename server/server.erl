@@ -124,8 +124,9 @@ user_in_match(Sock, Match, User) ->
         {modifier_pos, Id,Type, {X, Y}} ->
             gen_tcp:send(Sock, io_lib:format("!modifier_pos ~p ~p ~p ~p\n", [Id, Type,X, Y])),
             user_in_match(Sock, Match, User);
-        {modifier_rem, Id, {X, Y}} ->
-            gen_tcp:send(Sock, io_lib:format("!modifier_pos ~p ~p ~p\n", [Id, X, Y])),
+        {modifier_rem, Id} ->
+            % io:format("!modifier_rem ~p\n", [Id]),
+            gen_tcp:send(Sock, io_lib:format("!modifier_rem ~p\n", [Id])),
             user_in_match(Sock, Match, User);
         {player_aim, Id, {X, Y}} ->
             % io:format("!player_aim ~p ~p ~p\n", [Id, X, Y]),

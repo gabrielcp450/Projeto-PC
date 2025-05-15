@@ -50,7 +50,7 @@ loop(Pids, Projs, Mod, Counter) ->
             [Pid ! {player_aim, Player#player.id, Player#player.aim} || Player <- maps:values(NewPids4), Pid <- Players],
             [Pid ! {proj_pos, Id, Proj#proj.p} || {Id, Proj} <- lists:enumerate(NewProjs2), Pid <- Players],
             timer:send_after(?TICK, self(), update),
-            loop(NewPids3, NewProjs2, NewMod, Counter);
+            loop(NewPids4, NewProjs2, NewMod, Counter);
         modifiers ->
             {NewMod, NewCounter} = gen_modifiers(Pids, Mod, Counter),
             timer:send_after(?MODIFIERS, self(), modifiers),

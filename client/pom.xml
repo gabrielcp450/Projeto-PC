@@ -16,6 +16,36 @@
       <version>3.3.7</version>
     </dependency>
     <dependency>
+      <groupId>org.processing</groupId>
+      <artifactId>sound</artifactId>
+      <version>2.4.0</version>
+    </dependency>
+    <dependency>
+      <groupId>com.jsyn</groupId>
+      <artifactId>jsyn</artifactId>
+      <version>17.1.0</version>
+    </dependency>
+    <!-- Tritonus Share (required by mp3spi) -->
+    <dependency>
+        <groupId>com.googlecode.soundlibs</groupId>
+        <artifactId>tritonus-share</artifactId>
+        <version>0.3.7.4</version>
+    </dependency>
+
+    <!-- JavaLayer (MP3 decoding library) -->
+    <dependency>
+        <groupId>com.googlecode.soundlibs</groupId>
+        <artifactId>jl</artifactId>
+        <version>1.0.1.4</version>
+    </dependency>
+
+    <!-- mp3spi (MP3 plugin for Java Sound API) -->
+    <dependency>
+        <groupId>com.googlecode.soundlibs</groupId>
+        <artifactId>mp3spi</artifactId>
+        <version>1.9.5.4</version>
+    </dependency>
+    <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
       <version>1.18.30</version>

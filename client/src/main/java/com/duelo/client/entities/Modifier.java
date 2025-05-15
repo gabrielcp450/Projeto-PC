@@ -1,5 +1,7 @@
 package com.duelo.client.entities;
 
+import com.duelo.client.ui.Constants;
+
 import processing.core.PApplet;
 
 public class Modifier {
@@ -27,7 +29,7 @@ public class Modifier {
 
     public void draw(PApplet p, int playAreaX, int playAreaY, int playAreaSize) {
         // Draw modifier
-        p.ellipseMode(PApplet.CENTER);
+        p.ellipseMode(PApplet.RADIUS);
         p.noStroke();
         switch (type) {
             case 0:
@@ -48,6 +50,9 @@ public class Modifier {
         }
         float mappedX = playAreaX + x * playAreaSize;
         float mappedY = playAreaY + y * playAreaSize;
-        p.rect(mappedX, mappedY, 20, 20); // Size of the modifier
+        p.ellipse(mappedX, mappedY, Constants.MODIFIER_RADIUS * playAreaSize, Constants.MODIFIER_RADIUS * playAreaSize); // Size
+                                                                                                                         // of
+                                                                                                                         // the
+                                                                                                                         // modifier
     }
 }

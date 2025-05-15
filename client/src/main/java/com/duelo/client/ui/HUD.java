@@ -55,6 +55,14 @@ public class HUD {
         this.opponentScore = opponentScore;
     }
 
+    public int getPlayerScore() {
+        return playerScore;
+    }
+
+    public int getOpponentScore() {
+        return opponentScore;
+    }
+
     /**
      * Renders the HUD with current scores
      */
