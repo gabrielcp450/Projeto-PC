@@ -7,13 +7,22 @@ start() ->
     register(?MODULE, Pid).
 
 find(User) ->
-    Level = stats:get_level(User),
-    ?MODULE ! {self(), find, Level, User}.
+    io:format("Received find for user: ~p~n", [User]),
+    case stats:get_level(User) of
+        undefined -> io:format("User ~p has undefined level~n", [User]);
+        Level when is_integer(Level) ->
+            io:format("Level of ~p is ~p~n", [User, Level]),
+            ?MODULE ! {self(), find, Level, User}
+    end.
 
 cancel(User) ->
-    Level = stats:get_level(User),
-    io:format("Level of ~p is ~p~n", [User, Level]),
-    ?MODULE ! {self(), cancel, Level}.
+    io:format("User cancelled match searching: ~p~n", [User]),
+    case stats:get_level(User) of
+        undefined -> io:format("User ~p has undefined level~n", [User]);
+        Level when is_integer(Level) ->
+            io:format("Level of ~p is ~p~n", [User, Level]),
+            ?MODULE ! {self(), cancel, Level}
+    end.
 
 find_lvl(M, L) ->
     case maps:find(L, M) of

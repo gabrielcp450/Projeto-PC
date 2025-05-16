@@ -81,13 +81,9 @@ user_logged_in(Sock, User) ->
                         ok -> gen_tcp:send(Sock, "!ok\n");
                         invalid -> gen_tcp:send(Sock, "user not logged\n")
                     end;
-                ["/s"] ->
-                    matchmaker:find(User);
-                ["/s-"] ->
-                    matchmaker:cancel(User);
-                ["/t"] ->
-                    gen_tcp:send(Sock, io_lib:format("!rankings ~w\n", [stats:top10()])),
-                    user_logged_in(Sock, User);
+                ["/s"] -> matchmaker:find(User);
+                ["/s-"] -> matchmaker:cancel(User);
+                ["/t"] -> gen_tcp:send(Sock, io_lib:format("!rankings ~w\n", [stats:top10()]));
                 _ -> gen_tcp:send(Sock, "invalid message\n")
             end;
         {match_found, MatchId, MyId, Opponent} -> 
@@ -112,39 +108,27 @@ user_logged_in(Sock, User) ->
 user_in_match(Sock, Match, User) ->
     receive
         {player_pos, Id, {X, Y}} ->
-            % io:format("!player_pos ~p ~p ~p\n", [Id, X, Y]),
-            gen_tcp:send(Sock, io_lib:format("!player_pos ~p ~p ~p\n", [Id, X, Y])),
-            user_in_match(Sock, Match, User);
+            gen_tcp:send(Sock, io_lib:format("!player_pos ~p ~p ~p\n", [Id, X, Y]));
         {score, MyScore, OpponentScore} ->
-            gen_tcp:send(Sock, io_lib:format("!score ~p ~p\n", [MyScore, OpponentScore])),
-            user_in_match(Sock, Match, User);
+            gen_tcp:send(Sock, io_lib:format("!score ~p ~p\n", [MyScore, OpponentScore]));
         {modifier_pos, Id,Type, {X, Y}} ->
-            gen_tcp:send(Sock, io_lib:format("!modifier_pos ~p ~p ~p ~p\n", [Id, Type,X, Y])),
-            user_in_match(Sock, Match, User);
+            gen_tcp:send(Sock, io_lib:format("!modifier_pos ~p ~p ~p ~p\n", [Id, Type,X, Y]));
         {modifier_rem, Id} ->
-            % io:format("!modifier_rem ~p\n", [Id]),
-            gen_tcp:send(Sock, io_lib:format("!modifier_rem ~p\n", [Id])),
-            user_in_match(Sock, Match, User);
+            gen_tcp:send(Sock, io_lib:format("!modifier_rem ~p\n", [Id]));
         {player_aim, Id, {X, Y}} ->
-            % io:format("!player_aim ~p ~p ~p\n", [Id, X, Y]),
-            gen_tcp:send(Sock, io_lib:format("!player_aim ~p ~p ~p\n", [Id, X, Y])),
-            user_in_match(Sock, Match, User);
+            gen_tcp:send(Sock, io_lib:format("!player_aim ~p ~p ~p\n", [Id, X, Y]));
         {proj_pos, Id, {X, Y}} ->
-            % io:format("!player_aim ~p ~p ~p\n", [Id, X, Y]),
-            gen_tcp:send(Sock, io_lib:format("!proj_pos ~p ~p ~p\n", [Id, X, Y])),
-            user_in_match(Sock, Match, User);
+            gen_tcp:send(Sock, io_lib:format("!proj_pos ~p ~p ~p\n", [Id, X, Y]));
         {proj_rem, Id} ->
-            % io:format("!player_aim ~p ~p ~p\n", [Id, X, Y]),
-            gen_tcp:send(Sock, io_lib:format("!proj_rem ~p\n", [Id])),
-            user_in_match(Sock, Match, User);
+            gen_tcp:send(Sock, io_lib:format("!proj_rem ~p\n", [Id]));
         {finished, Result} ->
             io:format("match finished~n"),
             gen_tcp:send(Sock, io_lib:format("!finished ~p\n", [Result])),
-             case Result of
-                 1 -> stats:add_win(User);
-                 -1 -> stats:add_loss(User);
-                 0 -> false
-             end,
+            case Result of
+                1 -> stats:add_win(User);
+                -1 -> stats:add_loss(User);
+                0 -> false
+            end,
             user_logged_in(Sock, User);
         {tcp,_, Data} ->
             case string:tokens(Data, " \n") of
@@ -160,9 +144,7 @@ user_in_match(Sock, Match, User) ->
                     gen_tcp:send(Sock, io_lib:format("!rankings ~w\n", [stats:top10()]));
                 _ ->
                     io:format("Received unknown command: ~p~n", [Data])
-            end,
-            user_in_match(Sock, Match, User);
-
+            end;
         {tcp_closed, _} ->
             io:format("socket closed when in match.~n"),
             auth:logout(User),
@@ -171,4 +153,5 @@ user_in_match(Sock, Match, User) ->
             io:format("error when in match.~n"),
             auth:logout(User),
             user_logged_out(Sock)
-    end.
+    end,
+    user_in_match(Sock, Match, User).

@@ -161,7 +161,8 @@ public class RankingsState extends State {
 
             // Barra de fundo
             game.fill(220, 220, 220, 120);
-            game.rect(scrollbarX, usersAreaTop + (usersAreaBottom - usersAreaTop) / 2, scrollbarWidth, usersAreaBottom - usersAreaTop, scrollbarRadius);
+            game.rect(scrollbarX, usersAreaTop + (usersAreaBottom - usersAreaTop) / 2, scrollbarWidth,
+                    usersAreaBottom - usersAreaTop, scrollbarRadius);
             // Barra de scroll
             game.fill(120, 120, 120, 180);
             game.rect(scrollbarX, scrollbarY + scrollbarHeight / 2, scrollbarWidth, scrollbarHeight, scrollbarRadius);
