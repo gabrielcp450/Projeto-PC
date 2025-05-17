@@ -44,7 +44,6 @@ public class PlayState extends State {
         this.projHitSound = new SoundFile(game, "assets/proj_hit.mp3");
         this.wallHitSound = new SoundFile(game, "assets/wall_hit.mp3");
         Sound.volume(0.5f);
-        calculatePlayArea();
 
         this.inputFont = game.createFont("Arial", 16);
         this.buttonFont = game.createFont("Arial-Bold", 20);
@@ -59,13 +58,14 @@ public class PlayState extends State {
 
     @Override
     public void draw() {
+        calculatePlayArea();
         game.background(Constants.BACKGROUND_COLOR);
 
         // Update timer
         int currentTime = game.millis() / 1000; // Convert to seconds
         int elapsedTime = currentTime - matchStartTime;
         int remainingTime = GAME_DURATION - elapsedTime;
-        
+
         if (remainingTime <= 0) {
             // Game time is up
             game.sendCommand("/timeup");
@@ -106,8 +106,10 @@ public class PlayState extends State {
         // Linha vermelha grossa (zona proibida)
         game.stroke(220, 40, 40); // vermelho forte
         game.strokeWeight(8);
-        game.line(playAreaX, 0, playAreaX, game.height); // Esquerda
-        game.line(playAreaX + playAreaSize, 0, playAreaX + playAreaSize, game.height); // Direita
+        game.line(playAreaX, playAreaY, playAreaX, playAreaY + playAreaSize); // Esquerda
+        game.line(playAreaX + playAreaSize, playAreaY, playAreaX + playAreaSize, playAreaY + playAreaSize); // Direita
+        game.line(playAreaX, playAreaY, playAreaX + playAreaSize, playAreaY); // Cima
+        game.line(playAreaX, playAreaY + playAreaSize, playAreaX + playAreaSize, playAreaY + playAreaSize); // Baixo
         game.noStroke();
 
         // Draw HUD

@@ -32,6 +32,7 @@ public class Game extends PApplet {
     private PrintWriter out;
     private BufferedReader in;
     private boolean isListening = false;
+    private Thread listenerThread;
 
     // States
     private State currentState;
@@ -103,6 +104,8 @@ public class Game extends PApplet {
     }
 
     public void setup() {
+        surface.setResizable(true);
+
         menuState = new MenuState(this);
         loginState = new LoginState(this);
         queueState = new QueueState(this);
@@ -121,6 +124,18 @@ public class Game extends PApplet {
 
     public void draw() {
         currentState.draw();
+    }
+
+    public void exit() {
+        isListening = false;
+        try {
+            if (listenerThread != null)
+                listenerThread.join();
+            if (socket != null && !socket.isClosed())
+                socket.close();
+        } catch (IOException | InterruptedException ex) {
+            System.err.println(ex);
+        }
     }
 
     public void keyPressed() {
@@ -173,7 +188,7 @@ public class Game extends PApplet {
 
     private void startAsyncListener() {
         isListening = true;
-        new Thread(() -> {
+        listenerThread = new Thread(() -> {
             try {
                 while (isListening) {
                     String response = in.readLine();
@@ -185,7 +200,8 @@ public class Game extends PApplet {
                 e.printStackTrace();
                 isListening = false;
             }
-        }).start();
+        });
+        listenerThread.start();
     }
 
     // Message handling from server

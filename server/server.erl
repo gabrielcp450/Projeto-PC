@@ -104,7 +104,6 @@ user_logged_in(Sock, User) ->
     end,
     user_logged_in(Sock, User).
 
-
 user_in_match(Sock, Match, User) ->
     receive
         {player_pos, Id, {X, Y}} ->
@@ -147,11 +146,20 @@ user_in_match(Sock, Match, User) ->
             end;
         {tcp_closed, _} ->
             io:format("socket closed when in match.~n"),
-            auth:logout(User),
-            user_logged_out(Sock);
+            user_disconnected_from_match(Match, User);
         {tcp_error, _} ->
-            io:format("error when in match.~n"),
-            auth:logout(User),
-            user_logged_out(Sock)
+            user_disconnected_from_match(Match, User)
     end,
     user_in_match(Sock, Match, User).
+
+user_disconnected_from_match(Match, User) ->
+    Match ! {self(), exit},
+    receive {finished, Result} ->
+        io:format("match finished while disconnected~n"),
+        case Result of
+            1 -> stats:add_win(User);
+            -1 -> stats:add_loss(User);
+            0 -> false
+        end
+    end,
+    auth:logout(User).
