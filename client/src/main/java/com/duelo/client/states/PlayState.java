@@ -34,6 +34,10 @@ public class PlayState extends State {
     private boolean scoreTableVisible = false;
     private List<RankingEntry> rankings = new ArrayList<RankingEntry>();
 
+    // Timer related fields
+    private int matchStartTime = 0;
+    private static final int GAME_DURATION = 120; // 2 minutes in seconds
+
     public PlayState(Game game) {
         super(game);
         this.hud = new HUD(game);
@@ -56,6 +60,18 @@ public class PlayState extends State {
     @Override
     public void draw() {
         game.background(Constants.BACKGROUND_COLOR);
+
+        // Update timer
+        int currentTime = game.millis() / 1000; // Convert to seconds
+        int elapsedTime = currentTime - matchStartTime;
+        int remainingTime = GAME_DURATION - elapsedTime;
+        
+        if (remainingTime <= 0) {
+            // Game time is up
+            game.sendCommand("/timeup");
+            remainingTime = 0;
+        }
+        hud.updateTime(remainingTime);
 
         // Update aim direction based on mouse position
         // Normalize mouse position to the playArea
@@ -131,6 +147,7 @@ public class PlayState extends State {
 
     public void onMatchFound(int myId, String opponent) {
         this.myPlayerId = myId;
+        this.matchStartTime = game.millis() / 1000; // Start counting from now
 
         String player0Name = myId == 0 ? "You" : opponent;
         String player1Name = myId == 1 ? "You" : opponent;
@@ -152,6 +169,7 @@ public class PlayState extends State {
         for (int i = 0; i < keysPressed.length; i++) {
             keysPressed[i] = false;
         }
+        matchStartTime = 0; // Reset match start time
     }
 
     synchronized public void onPlayerPositionChange(int id, float x, float y) {

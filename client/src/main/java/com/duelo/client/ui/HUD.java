@@ -20,6 +20,11 @@ public class HUD {
     private static final int BOX_WIDTH = 64;
     private static final int CENTER_BOX_WIDTH = 120;
     private static final int RADIUS = 12;
+    
+    // Timer related fields
+    private int gameTime = 0; // Time in seconds
+    private boolean isCountdown = false; // Whether the timer counts down or up
+    private int initialTime = 300; // 5 minutes in seconds
 
     public HUD(PApplet p) {
         this.p = p;
@@ -66,10 +71,39 @@ public class HUD {
     public void reset() {
         this.playerScore = 0;
         this.opponentScore = 0;
+        this.gameTime = 0;
     }
 
     /**
-     * Renders the HUD with current scores
+     * Sets the timer mode and initial time
+     * @param isCountdown Whether the timer should count down
+     * @param initialTime Initial time in seconds (only used for countdown mode)
+     */
+    public void setTimerMode(boolean isCountdown, int initialTime) {
+        this.isCountdown = isCountdown;
+        this.initialTime = initialTime;
+        this.gameTime = isCountdown ? initialTime : 0;
+    }
+
+    /**
+     * Updates the game time
+     * @param time Current time in seconds
+     */
+    public void updateTime(int time) {
+        this.gameTime = time;
+    }
+
+    /**
+     * Formats time in MM:SS format
+     */
+    private String formatTime(int seconds) {
+        int minutes = seconds / 60;
+        int remainingSeconds = seconds % 60;
+        return String.format("%02d:%02d", minutes, remainingSeconds);
+    }
+
+    /**
+     * Renders the HUD with current scores and timer
      */
     public void render() {
         p.pushStyle();
@@ -111,6 +145,13 @@ public class HUD {
         p.textAlign(p.CENTER, p.CENTER);
         p.text(playerScore, leftX, y);
         p.text(opponentScore, rightX, y);
+
+        // Timer
+        p.fill(white);
+        p.textSize(FONT_SIZE);
+        p.textAlign(p.CENTER, p.CENTER);
+        String timeText = formatTime(gameTime);
+        p.text(timeText, p.width / 2, y);
 
         p.popStyle();
     }
