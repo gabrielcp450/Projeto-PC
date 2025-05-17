@@ -25,6 +25,10 @@ public class HUD {
     private int gameTime = 0; // Time in seconds
     private boolean isCountdown = false; // Whether the timer counts down or up
     private int initialTime = 300; // 5 minutes in seconds
+    private static final int TIMER_BOX_WIDTH = 100;
+    private static final int TIMER_BOX_HEIGHT = 40; // Slightly smaller height for top position
+    private static final int TIMER_COLOR = 0xFF3C3C3C; // Dark gray color for timer box
+    private static final int TIMER_Y_OFFSET = 10; // Distance from top of screen
 
     public HUD(PApplet p) {
         this.p = p;
@@ -104,12 +108,40 @@ public class HUD {
 
     /**
      * Renders the HUD with current scores and timer
+     * @param playAreaY The Y position where the play area starts
      */
-    public void render() {
+    public void render(int playAreaY) {
         p.pushStyle();
         p.textFont(font);
-        p.textAlign(p.CENTER, p.CENTER);
 
+        // Timer centralizado acima da área de jogo
+        float timerX = p.width / 2f;
+        float timerY = Math.max(TIMER_Y_OFFSET + TIMER_BOX_HEIGHT / 2f, playAreaY - TIMER_BOX_HEIGHT / 2f - 10);
+
+        // Fundo do timer centralizado
+        p.rectMode(PApplet.CENTER);
+        p.noStroke();
+        p.fill(TIMER_COLOR, 200);
+        p.rect(timerX, timerY, TIMER_BOX_WIDTH, TIMER_BOX_HEIGHT, RADIUS);
+
+        // Texto do timer centralizado
+        String timeText = formatTime(gameTime);
+        p.textAlign(PApplet.CENTER, PApplet.CENTER);
+        p.textSize(FONT_SIZE - 4);
+
+        // Efeito de alerta
+        if (gameTime <= 30) {
+            float glowIntensity = 0.5f + 0.5f * p.sin(p.frameCount * 0.2f);
+            p.fill(255, 50, 50, (int)(glowIntensity * 255));
+            p.textSize(FONT_SIZE - 2);
+            p.text(timeText, timerX, timerY);
+            p.fill(255);
+            p.textSize(FONT_SIZE - 4);
+        }
+        p.fill(255);
+        p.text(timeText, timerX, timerY);
+
+        // Draw score boxes
         float leftX = PADDING + BOX_WIDTH / 2f;
         float rightX = p.width - PADDING - BOX_WIDTH / 2f;
         float y = PADDING + BOX_HEIGHT / 2f;
@@ -145,13 +177,6 @@ public class HUD {
         p.textAlign(p.CENTER, p.CENTER);
         p.text(playerScore, leftX, y);
         p.text(opponentScore, rightX, y);
-
-        // Timer
-        p.fill(white);
-        p.textSize(FONT_SIZE);
-        p.textAlign(p.CENTER, p.CENTER);
-        String timeText = formatTime(gameTime);
-        p.text(timeText, p.width / 2, y);
 
         p.popStyle();
     }

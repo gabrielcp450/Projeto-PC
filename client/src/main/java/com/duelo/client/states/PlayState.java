@@ -111,7 +111,7 @@ public class PlayState extends State {
         game.noStroke();
 
         // Draw HUD
-        hud.render();
+        hud.render(playAreaY);
 
         if (scoreTableVisible) {
             drawScoreTable();
