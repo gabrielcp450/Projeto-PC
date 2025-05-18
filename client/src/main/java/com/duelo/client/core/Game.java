@@ -15,6 +15,7 @@ import com.duelo.client.states.PlayState;
 import com.duelo.client.states.QueueState;
 import com.duelo.client.states.RankingsState;
 import com.duelo.client.states.ResultState;
+import com.duelo.client.states.ChangePasswordState;
 import com.duelo.client.utils.Auth;
 import com.duelo.client.utils.MessageParser;
 
@@ -42,6 +43,7 @@ public class Game extends PApplet {
     private PlayState playState;
     private RankingsState rankingsState;
     private ResultState resultState;
+    private ChangePasswordState changePasswordState;
 
     public Game() {
         this.authManager = new Auth(this);
@@ -95,6 +97,9 @@ public class Game extends PApplet {
             case RESULT:
                 currentState = resultState;
                 break;
+            case CHANGE_PASSWORD:
+                currentState = changePasswordState;
+                break;
         }
     }
 
@@ -112,6 +117,7 @@ public class Game extends PApplet {
         playState = new PlayState(this);
         rankingsState = new RankingsState(this);
         resultState = new ResultState(this);
+        changePasswordState = new ChangePasswordState(this);
 
         currentState = loginState;
 

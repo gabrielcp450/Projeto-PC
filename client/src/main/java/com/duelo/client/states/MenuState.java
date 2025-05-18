@@ -17,65 +17,72 @@ public class MenuState extends State {
     private PFont textFont;
     private PFont buttonFont;
 
-    // Buttons
-    private final List<Button> buttons = new ArrayList<>();
+    // Labels, colors e actions
+    private final List<String> labels = List.of("Play", "Rankings", "Change Password", "Delete Account", "Logout");
+    private final List<Integer> colors = List.of(
+        Constants.PRIMARY_COLOR,
+        Constants.SECONDARY_COLOR,
+        Constants.SECONDARY_COLOR,
+        Constants.ACCENT_COLOR,
+        Constants.ACCENT_COLOR
+    );
+    private final List<Runnable> actions = new ArrayList<>();
+    private final int btnWidth = Constants.BUTTON_WIDTH;
+    private final int btnHeight = Constants.BUTTON_HEIGHT;
+    // Lista temporária para os botões do frame atual
+    private List<Button> tempButtons = new ArrayList<>();
 
     public MenuState(Game game) {
         super(game);
-
         // Load fonts
         titleFont = game.createFont("Arial-Bold", 32);
         textFont = game.createFont("Arial-Bold", 18);
         buttonFont = game.createFont("Arial-Bold", 20);
 
-        // Play Button
-        buttons.add(new Button(game, game.width / 2, 250, Constants.BUTTON_WIDTH, Constants.BUTTON_HEIGHT, "Play",
-                Constants.PRIMARY_COLOR, buttonFont, () -> {
-                    game.enterQueue();
-                }));
-
-        // Rankings Button
-        buttons.add(new Button(game, game.width / 2, 330, Constants.BUTTON_WIDTH, Constants.BUTTON_HEIGHT, "Rankings",
-                Constants.SECONDARY_COLOR, buttonFont, () -> {
-                    game.changeState(GameState.RANKINGS);
-                }));
-
-        // Delete Account Button
-        buttons.add(new Button(game, game.width / 2, 410, Constants.BUTTON_WIDTH, Constants.BUTTON_HEIGHT, "Delete Account",
-                Constants.ACCENT_COLOR, buttonFont, () -> {
-                    if (game.getAuthManager().unregister(game.getUsername())) {
-                        game.changeState(GameState.LOGIN);
-                    }
-                }));
-
-        // Logout Button
-        buttons.add(new Button(game, game.width / 2, 490, Constants.BUTTON_WIDTH, Constants.BUTTON_HEIGHT, "Logout",
-                Constants.ACCENT_COLOR, buttonFont, () -> {
-                    if (game.getAuthManager().logout()) {
-                        game.changeState(GameState.LOGIN);
-                    }
-                }));
+        // Define actions
+        actions.add(() -> game.enterQueue());
+        actions.add(() -> game.changeState(GameState.RANKINGS));
+        actions.add(() -> game.changeState(GameState.CHANGE_PASSWORD));
+        actions.add(() -> {
+            if (game.getAuthManager().unregister(game.getUsername())) {
+                game.changeState(GameState.LOGIN);
+            }
+        });
+        actions.add(() -> {
+            if (game.getAuthManager().logout()) {
+                game.changeState(GameState.LOGIN);
+            }
+        });
     }
 
     @Override
     public void draw() {
         game.background(Constants.BACKGROUND_COLOR);
-
-        // Title
         game.textFont(titleFont);
         game.fill(Constants.TEXT_COLOR);
-        game.text("Main Menu", game.width / 2, 100);
+        game.textAlign(game.CENTER, game.CENTER);
+        game.text("Main Menu", game.width / 2, game.height * 0.15f);
 
-        // Welcome message
         game.textFont(textFont);
-        game.text("Welcome, " + game.getUsername(), game.width / 2, 150);
+        game.text("Welcome, " + game.getUsername(), game.width / 2, game.height * 0.25f);
 
-        // Draw buttons
-        buttons.forEach(Button::draw);
+        // Cria e desenha botões dinamicamente
+        tempButtons = new ArrayList<>();
+        float startY = game.height * 0.38f;
+        float spacing = game.height * 0.10f;
+        for (int i = 0; i < labels.size(); i++) {
+            int x = game.width / 2;
+            int y = (int) (startY + i * spacing);
+            Button btn = new Button(game, x, y, btnWidth, btnHeight, labels.get(i), colors.get(i), buttonFont, actions.get(i));
+            tempButtons.add(btn);
+            btn.draw();
+        }
     }
 
     @Override
     public void mousePressed() {
-        buttons.forEach(Button::checkClick);
+        if (tempButtons != null) {
+            tempButtons.forEach(Button::checkClick);
+        }
     }
 }

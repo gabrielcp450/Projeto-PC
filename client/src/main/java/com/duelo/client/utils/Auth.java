@@ -97,6 +97,28 @@ public class Auth {
         }
     }
 
+    public String changePassword(String oldPassword, String newPassword) {
+        try {
+            if (!isLoggedIn) {
+                return "You must be logged in.";
+            }
+            if (!game.connect())
+                return "Connection error.";
+
+            // O servidor espera: /c <newPassword>
+            game.sendCommand("/c " + newPassword);
+            String response = game.readResponse();
+
+            if (!response.startsWith("!")) {
+                return response; // Error message from server
+            }
+            return null; // Success
+        } catch (IOException e) {
+            e.printStackTrace();
+            return "Error communicating with server.";
+        }
+    }
+
     // Getters
     public boolean isLoggedIn() {
         return isLoggedIn;
