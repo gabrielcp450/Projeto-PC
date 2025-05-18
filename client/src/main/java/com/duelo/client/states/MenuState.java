@@ -40,10 +40,12 @@ public class MenuState extends State {
                     game.changeState(GameState.RANKINGS);
                 }));
 
-        // Profile Button
-        buttons.add(new Button(game, game.width / 2, 410, Constants.BUTTON_WIDTH, Constants.BUTTON_HEIGHT, "Profile",
-                Constants.SECONDARY_COLOR, buttonFont, () -> {
-                    game.changeState(GameState.PROFILE);
+        // Delete Account Button
+        buttons.add(new Button(game, game.width / 2, 410, Constants.BUTTON_WIDTH, Constants.BUTTON_HEIGHT, "Delete Account",
+                Constants.ACCENT_COLOR, buttonFont, () -> {
+                    if (game.getAuthManager().unregister(game.getUsername())) {
+                        game.changeState(GameState.LOGIN);
+                    }
                 }));
 
         // Logout Button
