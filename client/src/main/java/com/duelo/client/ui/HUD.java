@@ -20,7 +20,7 @@ public class HUD {
     private static final int BOX_WIDTH = 64;
     private static final int CENTER_BOX_WIDTH = 120;
     private static final int RADIUS = 12;
-    
+
     // Timer related fields
     private int gameTime = 0; // Time in seconds
     private boolean isCountdown = false; // Whether the timer counts down or up
@@ -80,8 +80,11 @@ public class HUD {
 
     /**
      * Sets the timer mode and initial time
-     * @param isCountdown Whether the timer should count down
-     * @param initialTime Initial time in seconds (only used for countdown mode)
+     *
+     * @param isCountdown
+     *            Whether the timer should count down
+     * @param initialTime
+     *            Initial time in seconds (only used for countdown mode)
      */
     public void setTimerMode(boolean isCountdown, int initialTime) {
         this.isCountdown = isCountdown;
@@ -91,7 +94,9 @@ public class HUD {
 
     /**
      * Updates the game time
-     * @param time Current time in seconds
+     *
+     * @param time
+     *            Current time in seconds
      */
     public void updateTime(int time) {
         this.gameTime = time;
@@ -108,7 +113,9 @@ public class HUD {
 
     /**
      * Renders the HUD with current scores and timer
-     * @param playAreaY The Y position where the play area starts
+     *
+     * @param playAreaY
+     *            The Y position where the play area starts
      */
     public void render(int playAreaY) {
         p.pushStyle();
@@ -132,7 +139,7 @@ public class HUD {
         // Efeito de alerta
         if (gameTime <= 30) {
             float glowIntensity = 0.5f + 0.5f * p.sin(p.frameCount * 0.2f);
-            p.fill(255, 50, 50, (int)(glowIntensity * 255));
+            p.fill(255, 50, 50, (int) (glowIntensity * 255));
             p.textSize(FONT_SIZE - 2);
             p.text(timeText, timerX, timerY);
             p.fill(255);
