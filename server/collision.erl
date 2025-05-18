@@ -33,7 +33,7 @@ handle_player_hit_wall(FP, FPid, SP, SPid, HitPlayer, PointsInc) ->
     end,
     FPid ! {score, FPNew#player.points, SPNew#player.points},
     SPid ! {score, SPNew#player.points, FPNew#player.points},
-    #{FPid => FPNew, SPid => SPNew}.
+    {hit, #{FPid => FPNew, SPid => SPNew}}.
 
 handle_player_hit(FP, FPid, SP, SPid, HitPlayer, PointsInc) ->
     {FPNew, SPNew} = case HitPlayer of
@@ -78,7 +78,7 @@ player_collision(Pids) ->
         false ->
             case collides_sphere_to_wall(SP#player.p, ?PLAYER_RADIUS) of
                 true -> handle_player_hit_wall(FP, FPid, SP, SPid, second, 2);
-                false -> Pids
+                false -> {didnt_hit,Pids}
             end
     end.
 

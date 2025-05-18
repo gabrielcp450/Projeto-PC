@@ -2,6 +2,7 @@
 -define(TICK, 1).                     %% milliseconds per update
 -define(FRICTION, 20.0).
 -define(ACCELERATION, 6.0).
+-define(RESPAWN, 1).                   % Seconds to respawn after some player hit a wall
 -define(MODIFIERS_INTERVAL, 5000).             %% milliseconds between modifiers
 -define(BUFF, 100).                  %% millisenconds to each tick to buff
 -define(MAX_MODIFIERS, 2).           %% max per modifier type

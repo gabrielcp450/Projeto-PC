@@ -55,12 +55,17 @@ set_results(Pids) ->
     FPid ! {finished, Result1},
     SPid ! {finished, Result2}.
 
+set_results_exit(Pids, Pid) ->
+    [{WPid, _}] = maps:to_list(maps:remove(Pid, Pids)),
+    WPid ! {finished, 1},
+    Pid ! {finished, -1}.
+
 loop(Pids, Mod, Counter, PrevTime) ->
     receive 
         update -> 
             NewPids = tick_buff_pids(Pids),
             NewPids1 = player_movement(NewPids),
-            NewPids2 = player_collision(NewPids1),
+            {CollisionResult, NewPids2}= player_collision(NewPids1),
             NewPids3 = proj_movement(NewPids2),
             NewPids4 = proj_collision(NewPids3),
             {NewPids5, NewMod} = mod_collision(NewPids4, Mod),
@@ -68,6 +73,13 @@ loop(Pids, Mod, Counter, PrevTime) ->
             [Pid ! {player_pos, P#player.id, P#player.p} || P <- maps:values(NewPids5), Pid <- Players],
             [Pid ! {player_aim, P#player.id, P#player.aim} || P <- maps:values(NewPids5), Pid <- Players],
             [Pid ! {proj_pos, Id, P#proj.p} || {Id, P} <- get_all_projectiles(NewPids5), Pid <- Players],
+            case CollisionResult of
+                hit ->
+                    timer:send_after(?RESPAWN*1000,self(), respawn),
+                    user_in_match_respawn(NewPids5, NewMod, Counter);
+                didnt_hit ->
+                    true
+            end,
             % io:format("[Match ~p] Dt: ~pms~n", [self(), erlang:monotonic_time(millisecond)-PrevTime]),
             loop(NewPids5, NewMod, Counter, erlang:monotonic_time(millisecond));
         modifiers ->
@@ -98,7 +110,17 @@ loop(Pids, Mod, Counter, PrevTime) ->
         finished -> 
             set_results(Pids);
         {Pid, exit} -> 
-            [{WPid, _}] = maps:to_list(maps:remove(Pid, Pids)),
-            WPid ! {finished, 1},
-            Pid ! {finished, -1}
+            set_results_exit(Pids, Pid)
+    end.
+
+user_in_match_respawn(Pids, Mods, Counter) ->
+    receive 
+        respawn ->
+            loop(Pids, Mods, Counter, erlang:monotonic_time(millisecond));
+        finished -> 
+            set_results(Pids);
+        {Pid, exit} -> 
+            set_results_exit(Pids, Pid);
+        _ ->
+            user_in_match_respawn(Pids, Mods, Counter)
     end.
