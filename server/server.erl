@@ -29,8 +29,6 @@ user_logged_out(Sock) ->
                 ["/c", User, Pass] ->
                     case auth:create_account(User, Pass) of
                         ok -> 
-                            auth:save(),
-                            stats:save(),
                             gen_tcp:send(Sock, "!ok\n");
                         user_exists -> gen_tcp:send(Sock, "username already used\n")
                     end;
@@ -44,10 +42,6 @@ user_logged_out(Sock) ->
                         invalid ->
                             gen_tcp:send(Sock, "wrong username or password\n")
                     end;
-                ["/save"] -> 
-                    auth:save(),
-                    stats:save(),
-                    gen_tcp:send(Sock, "!ok\n");
                 _ -> gen_tcp:send(Sock, "invalid message\n")
             end;
         {tcp_closed, _} ->

@@ -11,6 +11,3 @@ EOF
 nc -N localhost 13556 <<EOF
 /c davide 1234
 EOF
-nc -N localhost 13556 <<EOF
-/save
-EOF

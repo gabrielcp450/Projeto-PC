@@ -1,5 +1,5 @@
 -module(auth).
--export([create_account/2, close_account/1, login/2, logout/1, change_pass/2, start/0, save/0, stop/0, online/0]).
+-export([create_account/2, close_account/1, login/2, logout/1, change_pass/2, start/0, stop/0, online/0]).
 
 create_account(User, Pass) ->
     case rpc({create_account, User, Pass}) of 
@@ -28,8 +28,9 @@ online() ->
 stop() ->
     rpc({stop}).
 
-save() ->
-    rpc({save}).
+save(Map) ->
+    Bin = term_to_binary(Map),
+    file:write_file("storage/auth.bin", Bin).
 
 start() ->
     case file:read_file("storage/auth.bin") of 
@@ -51,8 +52,8 @@ loop(Map) ->
                     loop(Map);
                 error ->
                     NewMap = maps:put(U, {P, false}, Map),
-                    erlang:display("ok"),
                     Pid ! {create_account, ok},
+                    save(NewMap),
                     loop(NewMap)
             end;
         {Pid, {close_account, U}} -> 
@@ -61,6 +62,7 @@ loop(Map) ->
                     erlang:display("ok"),
                     NewMap = maps:remove(U, Map),
                     Pid ! {close_account, ok},
+                    save(NewMap),
                     loop(NewMap);
                 error ->
                     erlang:display("Dosen't exist"),
@@ -73,6 +75,7 @@ loop(Map) ->
                     erlang:display("ok"),
                     NewMap = maps:update(U, {P, true}, Map),
                     Pid ! {login, ok},
+                    save(NewMap),
                     loop(NewMap);
                 {ok, {P, true}} -> 
                     erlang:display("User's already login"),
@@ -97,6 +100,7 @@ loop(Map) ->
                     erlang:display("ok"),
                     Pid ! {logout, ok},
                     NewMap = maps:update(U, {P, false}, Map),
+                    save(NewMap),
                     loop(NewMap);
                 error ->
                     erlang:display("Dosen't exist"),
@@ -113,6 +117,7 @@ loop(Map) ->
                     erlang:display("ok"),
                     Pid ! {change_pass, ok},
                     NewMap = maps:update(U, {NP,true}, Map),
+                    save(NewMap),
                     loop(NewMap);
                 error ->
                     erlang:display("Dosen't exist"),
@@ -123,14 +128,8 @@ loop(Map) ->
             NewMap = maps:filtermap(is_online, map),
             Pid ! {online, maps:keys(NewMap)},
             loop(Map);
-        {Pid, {save}} ->
-            Bin = term_to_binary(Map),
-            file:write_file("storage/auth.bin", Bin),
-            Pid ! {save},
-            loop(Map);
         {Pid, {stop}} ->
-            Bin = term_to_binary(Map),
-            file:write_file("storage/auth.bin", Bin),
+            save(Map),
             Pid ! {stop}
     end.
 

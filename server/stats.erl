@@ -1,6 +1,6 @@
 -module(stats).
 
--export([start/0, insert/1, get_level/1, add_win/1, add_loss/1, top10/0, save/0, stop/0]).
+-export([start/0, insert/1, get_level/1, add_win/1, add_loss/1, top10/0, stop/0]).
 
 -record(data, {level = 1, win = 0, loss = 0, win_streak = 0, lose_streak = 0}).
 
@@ -19,11 +19,12 @@ add_loss(User) ->
 top10() ->
     rpc({top}).
 
-save() ->
-    rpc({save}).
-
 stop() ->
     rpc({stop}).
+
+save(Map) ->
+    Bin = term_to_binary(Map),
+    file:write_file("storage/stats.bin", Bin).
 
 %aux({U1, L1, W1, Lo1}, {U2, L2, W2, Lo2}) ->
 %    case {L1, W1, -Lo1, U1} =< {L2, W2, -Lo2, U2} of
@@ -63,6 +64,7 @@ stats(Map) ->
     receive
         {Pid, {insert, User}} ->
             NewMap = maps:put(User, #data{}, Map),
+            save(NewMap),
             Pid ! {insert},
             stats(NewMap);
         {Pid, {level, User}} ->
@@ -83,6 +85,7 @@ stats(Map) ->
                     ok
             end,
             Pid ! {win, Msg},
+            save(NewMap),
             stats(NewMap);
         {Pid, {loss, User}} ->
             Data = maps:get(User, Map),
@@ -101,6 +104,7 @@ stats(Map) ->
                     ok
             end,
             Pid ! {loss, Msg},
+            save(NewMap),
             stats(NewMap);
 
         {Pid, {top}} ->
@@ -109,14 +113,8 @@ stats(Map) ->
             Top10 = lists:sublist(L1, 10),
             Pid ! {top, Top10}, 
             stats(Map);
-        {Pid, {save}} ->
-            Bin = term_to_binary(Map),
-            file:write_file("storage/stats.bin", Bin),
-            Pid ! {save},
-            stats(Map);
         {Pid, {stop}} ->
-            Bin = term_to_binary(Map),
-            file:write_file("storage/stats.bin", Bin),
+            save(Map),
             Pid ! {stop}
     end.
 
